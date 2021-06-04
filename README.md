@@ -1,4 +1,4 @@
-# GA_VRP_mod
+# GA_VRP_mGPU
 An update and improvement of the GA for VRP on multiple GPUs
 The vrp.sh file contains the following python command to run a program instance
 ```bash
