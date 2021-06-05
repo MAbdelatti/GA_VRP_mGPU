@@ -123,7 +123,7 @@ def readInput():
                             if line.upper().startswith('DEPOT_SECTION'): break
                         if line.upper().startswith('DEPOT_SECTION'):
                             vrpManager.nodes = np.delete(vrpManager.nodes, 0, 0) 
-                            print('Done reading problem file.')
+                            print('Done reading problem file.\n')
                             # text_out = open('1000.out', 'a')                         
                             # print('Done.', file=text_out)
                             # text_out.close()
@@ -714,7 +714,7 @@ def cp_unique_axis0(array):
 # ------------------------- Start Main ------------------------------------------------------------
 try:
     cudaDrv = driver.Driver()
-    print("Found {} GPUs to Utilize".format(cudaDrv.get_device_count()))
+    print("\nFound {} GPUs to Utilize.\n".format(cudaDrv.get_device_count()))
 
     vrp_capacity, data, opt = readInput()
     n = int(sys.argv[4])
@@ -723,7 +723,7 @@ try:
     popsize = -(-(n*(data.shape[0] - 1))//1000)*1000
     
     # popsize = 500
-    print('Taking population size {}*number of nodes'.format(n))
+    print('Taking population size {}*number of nodes...\n'.format(n))
     # text_out = open('1000.out', 'a')
     # print('Taking population size {}*number of nodes'.format(n),file=text_out)
     # text_out.close()
@@ -768,6 +768,7 @@ try:
     val.costTable()
     # --------------Calculate the cost table----------------------------------------------
     calc_cost_gpu[blocks, threads_per_block](data_d, popsize, vrp_capacity, cost_table_d)
+    print("Computing cost table completed...\n")
     # --------------Initialize population----------------------------------------------
     rng_states = create_xoroshiro128p_states(threads_per_block[0]**2 * blocks[0]**2, seed=random.randint(2,2*10**5))
     initializePop_gpu[blocks, threads_per_block](rng_states, data_d, missing_d, pop_d)

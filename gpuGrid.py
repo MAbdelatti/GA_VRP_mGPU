@@ -7,7 +7,8 @@ class GRID(object):
         self.min_blocks    = 5
 
     def __str__(self):
-        return 'Grid object has ({}, {}) blocks and ({}, {}) threads per block'.format(self.blocks_x, self.blocks_y, self.threads_x, self.threads_y)
+        return 'Grid object has ({}, {}) blocks and ({}, {}) threads per block\n'\
+        .format(self.blocks_x, self.blocks_y, self.threads_x, self.threads_y)
 
     def blockAlloc(self, n, multiplier):
         tbp         = self.threads_x
