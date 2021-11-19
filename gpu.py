@@ -592,44 +592,43 @@ def generateCutPoints(blocks, threads_per_block, crossover_points, pop_d, popsiz
 
 def elitism(child_d_1, child_d_2, pop_d, popsize):
     # 5% from parents
-    pop_d[0:floor(0.05*popsize), :] = pop_d[pop_d[:, -1].argsort()][0:floor(0.05*popsize),:]
+    pop_d = pop_d[pop_d[:, -1].argsort()]
 
     # Sort child 1 & child 2:
     child_d_1 = child_d_1[child_d_1[:,-1].argsort()]
     child_d_2 = child_d_2[child_d_2[:,-1].argsort()]
 
-    # 45% from child 1, and 50% from child 2:  
-    pop_d[floor(0.05*popsize):floor(0.5*popsize), :] = child_d_1[0:floor(0.45*popsize), :]
-    pop_d[floor(0.5 *popsize):-1, :]                 = child_d_2[0:floor(0.5 *popsize), :]
+    # 45% from child 1, and 50% from child 2:
+    pop_d[floor(0.05*popsize):floor(0.5*popsize), :] = child_d_1[0:(floor(0.5*popsize)-floor(0.05*popsize)), :]
+    pop_d[floor(0.5 *popsize):-1, :]                 = child_d_2[0:(popsize - floor(0.5 *popsize)-1), :]
 
-def showExecutionReport(filename, count, start_time, best_sol, data):           
-        end_time      = timer()
-        total_time    = float('{0:.4f}'.format((end_time - start_time)))
-        time_per_loop = float('{0:.4f}'.format((end_time - start_time)/(count-1)))
-        
-        val = val.VRP(filename, data.shape[0])
-        # val.read()
-        # val.costTable()
+def showExecutionReport(val, filename, opt, count, start_time, best_sol, data, pop_d):           
+    end_time      = timer()
+    total_time    = float('{0:.4f}'.format((end_time - start_time)))
+    time_per_loop = float('{0:.4f}'.format((end_time - start_time)/(count-1)))
 
-        # val.validate(pop_d, 1)
+    val.read()
+    val.costTable()
+    val.validate(pop_d, 1)
 
-        # best_sol     = cp.subtract(best_sol, cp.ones_like(best_sol))
-        # best_sol[0]  = best_sol[0] + 1
-        # best_sol[-1] = best_sol[-1] + 1
+    best_sol     = cp.subtract(best_sol, cp.ones_like(best_sol))
+    best_sol[0]  = best_sol[0] + 1
+    best_sol[-1] = best_sol[-1] + 1
 
-        # print('---------\nProblem:', filename, ', Best known:', opt)
-        # print('Time elapsed:', total_time, 'secs', 'Time per loop:', time_per_loop, 'secs', end = '\n---------\n')
-        # print('Stopped at generation %d, Best cost: %d, from Generation: %d'\
-        #     %(count-1, best_sol[-1], best_sol[0]), end = '\n---------\n')
-        # print('Best solution:', best_sol, end = '\n---------\n')
+    print('---------\nProblem: {}, Best known: {}'.format(filename, opt))
 
-        # text_out = open('results/'+filename+str(datetime.now())+'.out', 'a')
-        # print('---------\nProblem:', filename, ', Best known:', opt, file=text_out)
-        # print('Time elapsed:', total_time, 'secs', 'Time per loop:', time_per_loop, 'secs', end = '\n---------\n', file=text_out)
-        # print('Stopped at generation %d, Best cost: %d, from Generation: %d'\
-        #     %(count-1, best_sol[-1], best_sol[0]), end = '\n---------\n', file=text_out)
-        # print('Best solution:', best_sol, end = '\n---------\n', file=text_out)
-        # text_out.close()
+    print('Time elapsed:', total_time, 'secs', 'Time per loop:', time_per_loop, 'secs', end = '\n---------\n')
+    print('Stopped at generation %d, Best cost: %d, from Generation: %d'\
+        %(count-1, best_sol[-1], best_sol[0]), end = '\n---------\n')
+    print('Best solution:', best_sol, end = '\n---------\n')
+
+    text_out = open('results/'+filename+str(datetime.now())+'.out', 'a')
+    print('---------\nProblem:', filename, ', Best known:', opt, file=text_out)
+    print('Time elapsed:', total_time, 'secs, ', 'Time per loop:', time_per_loop, 'secs', end = '\n---------\n', file=text_out)
+    print('Stopped at generation %d, Best cost: %d, from Generation: %d'\
+        %(count-1, best_sol[-1], best_sol[0]), end = '\n---------\n', file=text_out)
+    print('Best solution:', best_sol, end = '\n---------\n', file=text_out)
+    text_out.close()
 # -----------------------------------------------------------------------------------------------------
 def nCr(n,r):
     f = np.math.factorial
@@ -654,41 +653,44 @@ def routePopulation_DGX_1(count, GPU_ID, gpu_count, popsize, pointers, auxiliary
         # Copy from GPU 5 >> GPU 1
         auxiliary_arr[:, :]    = 0
         cp.cuda.runtime.memcpyPeer(auxiliary_arr.data.ptr, GPU_ID, pointers[5], 5, pop_d.nbytes)
-        pop_d[popsize/gpu_count : 2*popsize/gpu_count, :] = auxiliary_arr[0 : popsize/gpu_count, :]
+        pop_d[floor(popsize/gpu_count) : floor(2*popsize/gpu_count), :] = auxiliary_arr[0 : (floor(2*popsize/gpu_count)-floor(popsize/gpu_count)), :]
 
     if GPU_ID == 2:
         # Copy from GPU 6 >> GPU 2
         auxiliary_arr[:, :]    = 0
         cp.cuda.runtime.memcpyPeer(auxiliary_arr.data.ptr, GPU_ID, pointers[6], 6, pop_d.nbytes)
-        pop_d[popsize/gpu_count : 2*popsize/gpu_count, :] = auxiliary_arr[0 : popsize/gpu_count, :]
+        pop_d[floor(popsize/gpu_count) : floor(2*popsize/gpu_count), :] = auxiliary_arr[0 : (floor(2*popsize/gpu_count)-floor(popsize/gpu_count)), :]
 
     if GPU_ID == 3:
         # Copy from GPU 7 >> GPU 3
         auxiliary_arr[:, :]    = 0
         cp.cuda.runtime.memcpyPeer(auxiliary_arr.data.ptr, GPU_ID, pointers[7], 7, pop_d.nbytes)
-        pop_d[popsize/gpu_count : 2*popsize/gpu_count, :] = auxiliary_arr[0 : popsize/gpu_count, :]            
+        pop_d[floor(popsize/gpu_count) : floor(2*popsize/gpu_count), :] = auxiliary_arr[0 : (floor(2*popsize/gpu_count)-floor(popsize/gpu_count)), :]
 
 def migratePopulation_DGX_1(GPU_ID, gpu_count, popsize, pointers, auxiliary_arr, pop_d):
     if GPU_ID == 0:
         # Copy from GPU 4 >> GPU 0
         auxiliary_arr[:, :]    = 0
         cp.cuda.runtime.memcpyPeer(auxiliary_arr.data.ptr, GPU_ID, pointers[4], 4, pop_d.nbytes)
-        pop_d[popsize/gpu_count : 2*popsize/gpu_count, :] = auxiliary_arr[0 : popsize/gpu_count, :]
+        pop_d[floor(popsize/gpu_count) : floor(2*popsize/gpu_count), :] = auxiliary_arr[0 : floor(2*popsize/gpu_count)-floor(popsize/gpu_count), :]
 
         # Copy from GPU 1 >> GPU 0
         auxiliary_arr[:, :]    = 0
         cp.cuda.runtime.memcpyPeer(auxiliary_arr.data.ptr, GPU_ID, pointers[1], 1, pop_d.nbytes)
-        pop_d[2*popsize/gpu_count : 4*popsize/gpu_count, :] = auxiliary_arr[0 : 2*popsize/gpu_count, :]
+        # pop_d[2*popsize/gpu_count : 4*popsize/gpu_count, :] = auxiliary_arr[0 : 2*popsize/gpu_count, :]
+        pop_d[floor(2*popsize/gpu_count) : floor(4*popsize/gpu_count), :] = auxiliary_arr[0 : floor(4*popsize/gpu_count)-floor(2*popsize/gpu_count), :]
 
         # Copy from GPU 2 >> GPU 0
         auxiliary_arr[:, :]    = 0
         cp.cuda.runtime.memcpyPeer(auxiliary_arr.data.ptr, GPU_ID, pointers[2], 2, pop_d.nbytes)
-        pop_d[4*popsize/gpu_count : 6*popsize/gpu_count, :] = auxiliary_arr[0 : 2*popsize/gpu_count, :]
+        # pop_d[4*popsize/gpu_count : 6*popsize/gpu_count, :] = auxiliary_arr[0 : 2*popsize/gpu_count, :]
+        pop_d[floor(4*popsize/gpu_count) : floor(6*popsize/gpu_count), :] = auxiliary_arr[0 : floor(6*popsize/gpu_count)-floor(4*popsize/gpu_count), :]
 
         # Copy from GPU 3 >> GPU 0
         auxiliary_arr[:, :]    = 0
         cp.cuda.runtime.memcpyPeer(auxiliary_arr.data.ptr, GPU_ID, pointers[3], 3, pop_d.nbytes)
-        pop_d[6*popsize/gpu_count : -1, :] = auxiliary_arr[0 : 2*popsize/gpu_count, :]
+        # pop_d[6*popsize/gpu_count : -1, :] = auxiliary_arr[0 : 2*popsize/gpu_count, :]
+        pop_d[floor(6*popsize/gpu_count) : -1, :] = auxiliary_arr[0 : (popsize - floor(6*popsize/gpu_count)-1), :]
        
         pop_d = pop_d[pop_d[:,-1].argsort()]
 
@@ -713,217 +715,221 @@ def broadcastPopulation_DGX_1(GPU_ID, pointers, pop_d):
     cp.cuda.Device(GPU_ID).synchronize() # Sync all GPUs
 
 # ------------------------- Main Function ------------------------------------------------------------
-def gpuWorkLoad(vrp_capacity, data, opt, filename, gpu_count, n, crossover_prob, mutation_prob, popsize, crossover_points,\
-                     blocks, threads_per_block, generations, r_flag, GPU_ID):
+def gpuWorkLoad(vrp_capacity, data, opt, filename, gpu_count, n, crossover_prob, mutation_prob,\
+                popsize, crossover_points,   blocks, threads_per_block, generations, r_flag, val, GPU_ID):
     
-    global pointers
-    pointers = {}
+    try:
+        global pointers
+        pointers = {}
 
-    cuda.select_device(GPU_ID)
-    print('Start time at GPU {} is: {}'.format(GPU_ID, timer()))
-    data_d             = cuda.to_device(data) 
+        cuda.select_device(GPU_ID)
+        print('Start time at GPU {} is: {}'.format(GPU_ID, timer()))
+        data_d             = cuda.to_device(data) 
 
-    # Linear upper triangle of cost table (width=nC2))
-    linear_cost_table  = cp.zeros((nCr(data.shape[0], 2)), dtype=np.int32)
+        # Linear upper triangle of cost table (width=nC2))
+        linear_cost_table  = cp.zeros((nCr(data.shape[0], 2)), dtype=np.int32)
 
-    pop_d              = cp.ones((popsize, int(1.5*data.shape[0])+2), dtype=np.int32)
-    pointers[GPU_ID]   = pop_d.data.ptr
+        pop_d              = cp.ones((popsize, int(1.5*data.shape[0])+2), dtype=np.int32)
+        pointers[GPU_ID]   = pop_d.data.ptr
 
-    auxiliary_arr      = cp.zeros(shape=(popsize, pop_d.shape[1]), dtype=cp.int32)
+        auxiliary_arr      = cp.zeros(shape=(popsize, pop_d.shape[1]), dtype=cp.int32)
 
-    # --------------Calculate the cost table----------------------------------------------
-    calculateLinearizedCost[blocks, threads_per_block](data_d, linear_cost_table)   
+        # --------------Calculate the cost table----------------------------------------------
+        calculateLinearizedCost[blocks, threads_per_block](data_d, linear_cost_table)   
+        # --------------Initialize population----------------------------------------------
+        initializePop[blocks, threads_per_block](data_d, pop_d)
 
-    # --------------Initialize population----------------------------------------------
-    initializePop[blocks, threads_per_block](data_d, pop_d)
-
-    for individual in pop_d:
-        cp.random.shuffle(individual[2:-1])
-
-    find_duplicates[blocks, threads_per_block](pop_d, r_flag)
-    shift_r_flag   [blocks, threads_per_block](r_flag, pop_d)
-
-    cap_adjust    [blocks, threads_per_block](r_flag, vrp_capacity, data_d, pop_d)
-    cleanup_r_flag[blocks, threads_per_block](r_flag, pop_d)
-
-    # --------------Calculate fitness----------------------------------------------
-    # time_list = []
-        
-    # for i in range(1000):
-    #     start_time = timer()
-    #     pop_d[:, -1] = 0
-    #     computeFitness[blocks, threads_per_block](linear_cost_table, pop_d, data_d.shape[0])
-    #     end_time = timer()
-    #     time_list.append(end_time - start_time)
-    # print('Average time of new function: {} seconds +/- {}'.format(np.mean(time_list), np.std(time_list)))
-
-    # for i in range(1000):
-    #     start_time = timer()
-    #     fitness_gpu_old[blocks, threads_per_block](linear_cost_table, pop_d, data_d.shape[0])
-    #     end_time = timer()
-    #     time_list.append(end_time - start_time)
-    # print('Average time of old function: {} seconds +/- {}'.format(np.mean(time_list), np.std(time_list)))
-
-    # exit()
-    pop_d[:, -1] = 0
-    computeFitness[blocks, threads_per_block](linear_cost_table, pop_d, data_d.shape[0])
-
-    # ------------------------Evolve population for some generations------------------------
-    parent_idx = cp.ones((popsize, 2), dtype=cp.int32)
-    child_d_1  = cp.ones((popsize, pop_d.shape[1]), dtype=cp.int32)
-    child_d_2  = cp.ones((popsize, pop_d.shape[1]), dtype=cp.int32)
-    cut_idx_d  = cp.ones(shape=(pop_d.shape[1])   , dtype=cp.int32)
-
-    del_list   = [data_d, linear_cost_table, pop_d, auxiliary_arr, parent_idx, child_d_1, child_d_2, cut_idx_d]
-
-    minimum_cost = float('Inf')
-    start_time   = timer()
-
-    count         = 0
-    best_sol      = 0
-    total_time    = 0.0
-    time_per_loop = 0.0
-
-    while count <= generations:
-        if minimum_cost <= opt:
-            break
-
-        random_arr_d = cp.arange(popsize, dtype=cp.int32).reshape((popsize,1))
-        random_arr_d = cp.repeat(random_arr_d, 4, axis=1)
-
-        for j in range(4):
-            cp.random.shuffle(random_arr_d[:,j])    
-                
-        # Select parents:
-        selectParents   [blocks, threads_per_block](pop_d, random_arr_d, parent_idx)
-        getParentLengths[blocks, threads_per_block](crossover_points, pop_d, auxiliary_arr, parent_idx)
-        generateCutPoints(blocks, threads_per_block, crossover_points, pop_d, popsize, auxiliary_arr)      
+        for individual in pop_d:
+            cp.random.shuffle(individual[2:-1])
             
-        random_arr = cp.random.randint(1, 100, (popsize, 1))
-        crossOver[blocks, threads_per_block](random_arr, auxiliary_arr, child_d_1, child_d_2, pop_d, parent_idx, crossover_prob)
+        find_duplicates[blocks, threads_per_block](pop_d, r_flag)
+        shift_r_flag   [blocks, threads_per_block](r_flag, pop_d)
 
-        # Performing mutation:
-        random_min_max = cp.random.randint(2, pop_d.shape[1]-2, (popsize, 2))
-        random_min_max.sort()
-        random_no_arr  = cp.random.randint(1, 100, (popsize, 1))
-        inverseMutate[blocks, threads_per_block](random_min_max, child_d_1, random_no_arr, mutation_prob)
-        
-        random_min_max = cp.random.randint(2, pop_d.shape[1]-2, (popsize, 2))
-        random_min_max.sort()
-        random_no_arr  = cp.random.randint(1, 100, (popsize, 1))
-        inverseMutate[blocks, threads_per_block](random_min_max, child_d_2, random_no_arr, mutation_prob) 
-            
-        # time profiling old and new functions:
+        cap_adjust    [blocks, threads_per_block](r_flag, vrp_capacity, data_d, pop_d)
+        cleanup_r_flag[blocks, threads_per_block](r_flag, pop_d)
+
+        # --------------Calculate fitness----------------------------------------------
         # time_list = []
-        
+            
         # for i in range(1000):
         #     start_time = timer()
-        #     find_duplicates[blocks, threads_per_block](child_d_1, r_flag)
-        #     find_missing_nodes[blocks, threads_per_block](data_d, missing_d, child_d_1)
-        #     add_missing_nodes[blocks, threads_per_block](missing_d, child_d_1, r_flag)
+        #     pop_d[:, -1] = 0
+        #     computeFitness[blocks, threads_per_block](linear_cost_table, pop_d, data_d.shape[0])
         #     end_time = timer()
         #     time_list.append(end_time - start_time)
         # print('Average time of new function: {} seconds +/- {}'.format(np.mean(time_list), np.std(time_list)))
 
         # for i in range(1000):
         #     start_time = timer()
-        #     find_duplicates_old[blocks, threads_per_block](child_d_1, r_flag)
-        #     find_missing_nodes_old[blocks, threads_per_block](data_d, missing_d, child_d_1)
-        #     add_missing_nodes_old[blocks, threads_per_block](missing_d, child_d_1, r_flag)
+        #     fitness_gpu_old[blocks, threads_per_block](linear_cost_table, pop_d, data_d.shape[0])
         #     end_time = timer()
         #     time_list.append(end_time - start_time)
         # print('Average time of old function: {} seconds +/- {}'.format(np.mean(time_list), np.std(time_list)))
 
-        # cleanUp(del_list)
         # exit()
+        pop_d[:, -1] = 0
+        computeFitness[blocks, threads_per_block](linear_cost_table, pop_d, data_d.shape[0])
 
-        # Adjusting child_1 array:
-        find_duplicates   [blocks, threads_per_block](child_d_1, r_flag)
-        findMissingNodes  (blocks, threads_per_block, data_d, child_d_1, auxiliary_arr)
-        addMissingNodes   [blocks, threads_per_block](r_flag, auxiliary_arr, child_d_1)
-        shift_r_flag      [blocks, threads_per_block](r_flag, child_d_1)        
-        cap_adjust[blocks, threads_per_block](r_flag, vrp_capacity, data_d, child_d_1)        
-        cleanup_r_flag[blocks, threads_per_block](r_flag, child_d_1)
+        # ------------------------Evolve population for some generations------------------------
+        parent_idx = cp.ones((popsize, 2), dtype=cp.int32)
+        child_d_1  = cp.ones((popsize, pop_d.shape[1]), dtype=cp.int32)
+        child_d_2  = cp.ones((popsize, pop_d.shape[1]), dtype=cp.int32)
+        cut_idx_d  = cp.ones(shape=(pop_d.shape[1])   , dtype=cp.int32)
 
-        # # Adjusting child_2 array:
-        find_duplicates   [blocks, threads_per_block](child_d_2, r_flag)
-        findMissingNodes  (blocks, threads_per_block, data_d, child_d_2, auxiliary_arr)
-        addMissingNodes   [blocks, threads_per_block](r_flag, auxiliary_arr, child_d_2)
-        shift_r_flag      [blocks, threads_per_block](r_flag, child_d_2)
-        cap_adjust[blocks, threads_per_block](r_flag, vrp_capacity, data_d, child_d_2)
-        cleanup_r_flag[blocks, threads_per_block](r_flag, child_d_2)    
+        del_list   = [data_d, linear_cost_table, pop_d, auxiliary_arr, parent_idx, child_d_1, child_d_2, cut_idx_d]
 
-        # Performing the two-opt optimization and Calculating fitness for child_1 array:
-        reset_to_ones[blocks, threads_per_block](auxiliary_arr)
-        twoOpt      [blocks, threads_per_block](child_d_1, auxiliary_arr, linear_cost_table, data_d.shape[0])        
-        
-        child_d_1[:, -1] = 0
-        computeFitness[blocks, threads_per_block](linear_cost_table, child_d_1, data_d.shape[0])
-        
-        # Performing the two-opt optimization and Calculating fitness for child_2 array:
-        reset_to_ones[blocks, threads_per_block](auxiliary_arr)
-        twoOpt      [blocks, threads_per_block](child_d_2, auxiliary_arr, linear_cost_table, data_d.shape[0])
+        minimum_cost = float('Inf')
+        start_time   = timer()
 
-        child_d_2[:, -1] = 0
-        computeFitness[blocks, threads_per_block](linear_cost_table, child_d_2, data_d.shape[0])      
+        count         = 0
+        best_sol      = 0
+        total_time    = 0.0
+        time_per_loop = 0.0
 
-        # Creating the new population from parents and children:
-        updatePop[blocks, threads_per_block](count, parent_idx, child_d_1, child_d_2, pop_d)
-        elitism(child_d_1, child_d_2, pop_d, popsize)
+        while count <= generations:
+            if minimum_cost <= opt:
+                break
+            
+            random_arr_d = cp.arange(popsize, dtype=cp.int32).reshape((popsize,1))
+            random_arr_d = cp.repeat(random_arr_d, 4, axis=1)
 
-        cp.cuda.Device(GPU_ID).synchronize()
-        # GPU array migration is topology specific:
-        if (count+1)%10 == 0:
-            if gpu_count == 8: # for hypercube mesh connections like DGX-1
-                routePopulation_DGX_1    (count, GPU_ID, gpu_count, popsize, pointers, auxiliary_arr, pop_d) # migrate populations at remote GPUs nearby
-                cp.cuda.Device(GPU_ID).synchronize() # Sync all GPUs
-
-                migratePopulation_DGX_1  (GPU_ID, gpu_count, popsize, pointers, auxiliary_arr, pop_d) # migrate populations to GPU 0
-                cp.cuda.Device(GPU_ID).synchronize() # Sync all GPUs
+            for j in range(4):
+                cp.random.shuffle(random_arr_d[:,j])
+                               
+            # Select parents:
+            selectParents   [blocks, threads_per_block](pop_d, random_arr_d, parent_idx)
+            getParentLengths[blocks, threads_per_block](crossover_points, pop_d, auxiliary_arr, parent_idx)
+            generateCutPoints(blocks, threads_per_block, crossover_points, pop_d, popsize, auxiliary_arr)      
                 
-                broadcastPopulation_DGX_1(GPU_ID, pointers, pop_d) # broadcast updated population at GPU 0 to all GPUs
+            random_arr = cp.random.randint(1, 100, (popsize, 1))
+            crossOver[blocks, threads_per_block](random_arr, auxiliary_arr, child_d_1, child_d_2, pop_d, parent_idx, crossover_prob)
 
-            elif gpu_count <= 5: # for P2P-only connection
-                # p2pCopy()
-                pass
+            # Performing mutation:
+            random_min_max = cp.random.randint(2, pop_d.shape[1]-2, (popsize, 2))
+            random_min_max.sort()
+            random_no_arr  = cp.random.randint(1, 100, (popsize, 1))
+            inverseMutate[blocks, threads_per_block](random_min_max, child_d_1, random_no_arr, mutation_prob)
 
-        # Picking best solution:
-        best_sol      = pop_d[0, :]
-        minimum_cost  = best_sol[-1]        
-        worst_cost    = pop_d[-1, :][-1]
-        delta         = worst_cost-minimum_cost
-        average       = cp.average(pop_d[:,-1])
+            random_min_max = cp.random.randint(2, pop_d.shape[1]-2, (popsize, 2))
+            random_min_max.sort()
+            random_no_arr  = cp.random.randint(1, 100, (popsize, 1))
+            inverseMutate[blocks, threads_per_block](random_min_max, child_d_2, random_no_arr, mutation_prob)
+                
+            # time profiling old and new functions:
+            # time_list = []
+            
+            # for i in range(1000):
+            #     start_time = timer()
+            #     find_duplicates[blocks, threads_per_block](child_d_1, r_flag)
+            #     find_missing_nodes[blocks, threads_per_block](data_d, missing_d, child_d_1)
+            #     add_missing_nodes[blocks, threads_per_block](missing_d, child_d_1, r_flag)
+            #     end_time = timer()
+            #     time_list.append(end_time - start_time)
+            # print('Average time of new function: {} seconds +/- {}'.format(np.mean(time_list), np.std(time_list)))
+
+            # for i in range(1000):
+            #     start_time = timer()
+            #     find_duplicates_old[blocks, threads_per_block](child_d_1, r_flag)
+            #     find_missing_nodes_old[blocks, threads_per_block](data_d, missing_d, child_d_1)
+            #     add_missing_nodes_old[blocks, threads_per_block](missing_d, child_d_1, r_flag)
+            #     end_time = timer()
+            #     time_list.append(end_time - start_time)
+            # print('Average time of old function: {} seconds +/- {}'.format(np.mean(time_list), np.std(time_list)))
+
+            # cleanUp(del_list)
+            # exit()
+
+            # Adjusting child_1 array:
+            find_duplicates   [blocks, threads_per_block](child_d_1, r_flag)
+            findMissingNodes  (blocks, threads_per_block, data_d, child_d_1, auxiliary_arr)
+            addMissingNodes   [blocks, threads_per_block](r_flag, auxiliary_arr, child_d_1)
+            shift_r_flag      [blocks, threads_per_block](r_flag, child_d_1)        
+            cap_adjust[blocks, threads_per_block](r_flag, vrp_capacity, data_d, child_d_1)        
+            cleanup_r_flag[blocks, threads_per_block](r_flag, child_d_1)
+
+            # Adjusting child_2 array:
+            find_duplicates   [blocks, threads_per_block](child_d_2, r_flag)
+            findMissingNodes  (blocks, threads_per_block, data_d, child_d_2, auxiliary_arr)
+            addMissingNodes   [blocks, threads_per_block](r_flag, auxiliary_arr, child_d_2)
+            shift_r_flag      [blocks, threads_per_block](r_flag, child_d_2)
+            cap_adjust[blocks, threads_per_block](r_flag, vrp_capacity, data_d, child_d_2)
+            cleanup_r_flag[blocks, threads_per_block](r_flag, child_d_2)
+
+            # Performing the two-opt optimization and Calculating fitness for child_1 array:
+            reset_to_ones[blocks, threads_per_block](auxiliary_arr)
+            twoOpt      [blocks, threads_per_block](child_d_1, auxiliary_arr, linear_cost_table, data_d.shape[0])
+            
+            child_d_1[:, -1] = 0
+            computeFitness[blocks, threads_per_block](linear_cost_table, child_d_1, data_d.shape[0])
+            
+            # Performing the two-opt optimization and Calculating fitness for child_2 array:
+            reset_to_ones[blocks, threads_per_block](auxiliary_arr)
+            twoOpt      [blocks, threads_per_block](child_d_2, auxiliary_arr, linear_cost_table, data_d.shape[0])
+
+            child_d_2[:, -1] = 0
+            computeFitness[blocks, threads_per_block](linear_cost_table, child_d_2, data_d.shape[0])      
+
+            # Creating the new population from parents and children:
+            updatePop[blocks, threads_per_block](count, parent_idx, child_d_1, child_d_2, pop_d)
+            elitism(child_d_1, child_d_2, pop_d, popsize)
+
+            pop_d = pop_d[pop_d[:, -1].argsort()]
+
+            cp.cuda.Device(GPU_ID).synchronize()
+            # GPU array migration is topology specific:
+            if (count+1)%1000 == 0:
+                if gpu_count == 8: # for hypercube mesh connections like DGX-1
+                    routePopulation_DGX_1(count, GPU_ID, gpu_count, popsize, pointers, auxiliary_arr, pop_d) # migrate populations at remote GPUs nearby
+                    cp.cuda.Device(GPU_ID).synchronize() # Sync all GPUs
+
+                    migratePopulation_DGX_1(GPU_ID, gpu_count, popsize, pointers, auxiliary_arr, pop_d) # migrate populations to GPU 0
+                    cp.cuda.Device(GPU_ID).synchronize() # Sync all GPUs
+                    
+                    broadcastPopulation_DGX_1(GPU_ID, pointers, pop_d) # broadcast updated population at GPU 0 to all GPUs
+
+                elif gpu_count <= 5: # for P2P-only connection
+                    # p2pCopy()
+                    pass
+
+            # Picking best solution:
+            best_sol      = pop_d[0, :]
+            minimum_cost  = best_sol[-1]        
+            worst_cost    = pop_d[-1, :][-1]
+            delta         = worst_cost-minimum_cost
+            average       = cp.average(pop_d[:,-1])
+            
+            if count == 1 and GPU_ID == 0:
+                print('At first generation, Best: %d,'%minimum_cost, 'Worst: %d'%worst_cost, \
+                    'delta: %d'%delta, 'Avg: %.2f'%average)
+
+            elif (count+1)%100 == 0 and GPU_ID == 0:
+                print('After %d generations, Best: %d,'%(count+1, minimum_cost), 'Worst: %d'%worst_cost, \
+                    'delta: %d'%delta, 'Avg: %.2f'%average)
+
+            count += 1
+
+        # Final update for the population at GPU 0 for output:
+        pop_d = pop_d[pop_d[:, -1].argsort()]
+        cp.cuda.Device(GPU_ID).synchronize()
         
-        if count == 1 and GPU_ID == 0:
-            print('At first generation, Best: %d,'%minimum_cost, 'Worst: %d'%worst_cost, \
-                'delta: %d'%delta, 'Avg: %.2f'%average)
+        if gpu_count == 8: # for hypercube mesh connections like DGX-1
+            routePopulation_DGX_1    (count, GPU_ID, gpu_count, popsize, pointers, auxiliary_arr, pop_d) # migrate populations at remote GPUs nearby
+            cp.cuda.Device(GPU_ID).synchronize() # Sync all GPUs
 
-        elif (count+1)%10 == 0 and GPU_ID == 0:
-            print('After %d generations, Best: %d,'%(count+1, minimum_cost), 'Worst: %d'%worst_cost, \
-                'delta: %d'%delta, 'Avg: %.2f'%average)
+            migratePopulation_DGX_1  (GPU_ID, gpu_count, popsize, pointers, auxiliary_arr, pop_d) # migrate populations to GPU 0
+            cp.cuda.Device(GPU_ID).synchronize() # Sync all GPUs
+            
+        if GPU_ID == 0:
+            best_sol      = pop_d[0, :]
+            minimum_cost  = best_sol[-1]        
+            worst_cost    = pop_d[-1, :][-1]
+            delta         = worst_cost-minimum_cost
+            average       = cp.average(pop_d[:,-1])
 
-        count += 1
+            showExecutionReport(val, filename, opt, count, start_time, best_sol, data, pop_d)
 
-    # Final update for the population at GPU 0 for output:
-    if gpu_count == 8: # for hypercube mesh connections like DGX-1
-        routePopulation_DGX_1    (count, GPU_ID, gpu_count, popsize, pointers, auxiliary_arr, pop_d) # migrate populations at remote GPUs nearby
-        cp.cuda.Device(GPU_ID).synchronize() # Sync all GPUs
-
-        migratePopulation_DGX_1  (GPU_ID, gpu_count, popsize, pointers, auxiliary_arr, pop_d) # migrate populations to GPU 0
-        cp.cuda.Device(GPU_ID).synchronize() # Sync all GPUs
-        
-    if GPU_ID == 0:
-        pop_d = pop_d[pop_d[:,-1].argsort()]
-
-        best_sol      = pop_d[0, :]
-        minimum_cost  = best_sol[-1]        
-        worst_cost    = pop_d[-1, :][-1]
-        delta         = worst_cost-minimum_cost
-        average       = cp.average(pop_d[:,-1])
-
-        showExecutionReport(filename, count, start_time, best_sol, data)
-        # cleanUp(del_list)
         print('End time at GPU {} is: {}'.format(GPU_ID, timer()))
-
+    except error as e:
+        print(e)
     # showExecutionReport(count, start_time, best_sol, data)   
     # cleanUp(del_list)
