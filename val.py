@@ -1,7 +1,7 @@
 import numpy as np
 import os
 
-class VRP():
+class VRP(object):
     def __init__(self, problem, n):
         self.file = problem
         self.n = n

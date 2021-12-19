@@ -115,6 +115,7 @@ def getGPUCount():
 basic_arguments = readInput() # read problem file and save vrp_capacity, data, opt into basic_arguments list
 basic_arguments.append(sys.argv[1]) #filename
 
+val                     = val.VRP(sys.argv[1], basic_arguments[1].shape[0])
 n                       = int(sys.argv[4])
 node_count              = basic_arguments[1].shape[0]
 gpu_count               = getGPUCount()
@@ -147,7 +148,7 @@ except:
 
 basic_arguments.append(generations)
 
-r_flag = 9999   # A flag for removal/replacement
+r_flag = 99999   # A flag for removal/replacement
 basic_arguments.append(r_flag)
 
 try:
@@ -159,11 +160,11 @@ try:
     with concurrent.futures.ThreadPoolExecutor(max_workers=gpu_count) as executor:        
         pointers = []
         for GPU_ID in range(gpu_count):
-            pointers.append(executor.submit(gpu.gpuWorkLoad, *basic_arguments, GPU_ID))
+            pointers.append(executor.submit(gpu.gpuWorkLoad, *basic_arguments, val, GPU_ID))
         
         # for pointer in concurrent.futures.as_completed(pointers):
         #     print(pointer.result())
 
         
-except KeyboardInterrupt:
-    pass
+except error as e:
+    print(e)

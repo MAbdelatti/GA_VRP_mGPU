@@ -14,8 +14,8 @@ class GRID(object):
         tbp         = self.threads_x
         b           = self.min_blocks
 
-        self.blocks_x = int(min(35, max(b, floor((2.0*n)/tbp))))
-        self.blocks_y = min(35, 5*self.blocks_x)
+        self.blocks_x = int(min(20, max(b, floor((2.0*n)/tbp))))
+        self.blocks_y = min(20, 5*self.blocks_x)
         # self.blocks_y = int(min(30, max(b, floor((n*multiplier)/tbp)))) - self.blocks_x
 
         return self.blocks_x, self.blocks_y
