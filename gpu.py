@@ -23,7 +23,8 @@ def gpuWorkLoad(vrp_capacity, data, opt, filename, gpu_count, n, crossover_prob,
         cuda.select_device(GPU_ID)
         print('Start time at GPU {} is: {}'.format(GPU_ID, timer()))
         
-        data_d             = cuda.to_device(data) 
+        data_d             = cuda.to_device(data)
+        print('Data loaded to GPU(s).\n')
 
         # Linear upper triangle of cost table (width=nC2))
         linear_cost_table  = cp.zeros((kernels.nCr(data.shape[0], 2)), dtype=np.int32)
@@ -35,9 +36,11 @@ def gpuWorkLoad(vrp_capacity, data, opt, filename, gpu_count, n, crossover_prob,
 
         # --------------Calculate the cost table----------------------------------------------
         kernels.calculateLinearizedCost[blocks, threads_per_block](data_d, linear_cost_table)
+        print('Cost table calculated successfully.')
 
         # --------------Initialize population-------------------------------------------------
         kernels.initializePop[blocks, threads_per_block](data_d, pop_d)
+        print('Population is initialized successfully.\n')
 
         for individual in pop_d:
             cp.random.shuffle(individual[2:-1])
@@ -145,9 +148,11 @@ def gpuWorkLoad(vrp_capacity, data, opt, filename, gpu_count, n, crossover_prob,
                     
                     kernels.broadcastPopulation_DGX_1(GPU_ID, pointers, pop_d) # broadcast updated population at GPU 0 to all GPUs
 
-                elif gpu_count <= 5: # for P2P-only connection
-                    # p2pCopy()
-                    pass
+                elif gpu_count > 1 and gpu_count < 6: # for P2P-only connection
+                    kernels.migratePopulation_P2P(GPU_ID, gpu_count, popsize, pointers, auxiliary_arr, pop_d) # migrate populations to GPU 0
+                    cp.cuda.Device(GPU_ID).synchronize() # Sync all GPUs
+                    
+                    kernels.broadcastPopulation_P2P(GPU_ID, pointers, pop_d) # broadcast updated population at GPU 0 to all GPUs
 
             # Picking best solution:
             best_sol      = pop_d[0, :]
@@ -176,10 +181,14 @@ def gpuWorkLoad(vrp_capacity, data, opt, filename, gpu_count, n, crossover_prob,
 
             kernels.migratePopulation_DGX_1  (GPU_ID, gpu_count, popsize, pointers, auxiliary_arr, pop_d) # migrate populations to GPU 0
             cp.cuda.Device(GPU_ID).synchronize() # Sync all GPUs
+
+        elif gpu_count > 1 and gpu_count < 6: # for P2P-only connection
+            kernels.migratePopulation_P2P  (GPU_ID, gpu_count, popsize, pointers, auxiliary_arr, pop_d) # migrate populations to GPU 0
+            cp.cuda.Device(GPU_ID).synchronize() # Sync all GPUs
             
         if GPU_ID == 0:
             best_sol      = pop_d[0, :]
-            minimum_cost  = best_sol[-1]        
+            minimum_cost  = best_sol[-1]
             worst_cost    = pop_d[-1, :][-1]
             delta         = worst_cost-minimum_cost
             average       = cp.average(pop_d[:,-1])

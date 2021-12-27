@@ -3,20 +3,27 @@ from math import ceil, floor
 class GRID(object):
     def __init__(self):
         self.threads_x     = 32 
-        self.threads_y     = 12
-        self.min_blocks    = 5
+        self.threads_y     = 16
+        self.arrangement   = 1
+
+        self.block_dict    = {1:(4, 4)  , 2:(8, 8)  , 3:(16, 16), 4:(32,32)}
 
     def __str__(self):
-        return 'Grid object has ({}, {}) blocks and ({}, {}) threads per block\n'\
-        .format(self.blocks_x, self.blocks_y, self.threads_x, self.threads_y)
+        return 'Grid object has {} blocks and ({}, {}) threads per block'.format(self.block_dict[self.arrangement], self.threads_x, self.threads_y)
 
     def blockAlloc(self, n, multiplier):
-        tbp         = self.threads_x
-        b           = self.min_blocks
+        if   n <= 350:
+            self.arrangement = 1
+        elif n <= 600:
+            self.arrangement = 2 
+        elif n <= 800:
+            self.arrangement = 3 
+        elif n > 800:
+            self.arrangement = 4 
 
-        self.blocks_x = int(min(20, max(b, floor((2.0*n)/tbp))))
-        self.blocks_y = min(20, 5*self.blocks_x)
-        # self.blocks_y = int(min(30, max(b, floor((n*multiplier)/tbp)))) - self.blocks_x
+        return self.block_dict[self.arrangement][0], self.block_dict[self.arrangement][1]
 
-        return self.blocks_x, self.blocks_y
+if __name__ == '__main__':
+    grid = GRID()
+    print(grid.blockAlloc(4,4))
 

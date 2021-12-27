@@ -511,28 +511,30 @@ def showExecutionReport(val, filename, opt, count, start_time, best_sol, data, p
     total_time    = float('{0:.4f}'.format((end_time - start_time)))
     time_per_loop = float('{0:.4f}'.format((end_time - start_time)/(count-1)))
 
-    val.read()
-    val.costTable()
-    val.validate(pop_d, 1)
-
     best_sol     = cp.subtract(best_sol, cp.ones_like(best_sol))
     best_sol[0]  = best_sol[0] + 1
     best_sol[-1] = best_sol[-1] + 1
 
     print('---------\nProblem: {}, Best known: {}'.format(filename, opt))
-
-    print('Time elapsed:', total_time, 'secs', 'Time per loop:', time_per_loop, 'secs', end = '\n---------\n')
     print('Stopped at generation %d, Best cost: %d, from Generation: %d'\
         %(count-1, best_sol[-1], best_sol[0]), end = '\n---------\n')
     print('Best solution:', best_sol, end = '\n---------\n')
+    print('Time elapsed:', total_time, 'secs',\
+          'Time per loop:', time_per_loop, 'secs', end = '\n---------\n')
 
     text_out = open('results/'+filename+str(datetime.now())+'.out', 'a')
-    print('---------\nProblem:', filename, ', Best known:', opt, file=text_out)
-    print('Time elapsed:', total_time, 'secs, ', 'Time per loop:', time_per_loop, 'secs', end = '\n---------\n', file=text_out)
+    print('---------\nProblem:', filename, ', Best known:', opt, file=text_out)    
     print('Stopped at generation %d, Best cost: %d, from Generation: %d'\
         %(count-1, best_sol[-1], best_sol[0]), end = '\n---------\n', file=text_out)
     print('Best solution:', best_sol, end = '\n---------\n', file=text_out)
+    print('Time elapsed:', total_time, 'secs, ',\
+          'Time per loop:', time_per_loop, 'secs', end = '\n---------\n', file=text_out)
     text_out.close()
+
+    # TODO: uncomment the following lines for the complete runs
+    val.read()
+    val.costTable()
+    val.validate(pop_d, 1)
 # -----------------------------------------------------------------------------------------------------
 def nCr(n,r):
     f = np.math.factorial
@@ -547,10 +549,9 @@ def getGPUCount():
 # ---------------------------------- Migrate populations from GPUs -------------------------------------------------------------------
 def routePopulation_DGX_1(count, GPU_ID, gpu_count, popsize, pointers, auxiliary_arr, pop_d):
 # ------------------------+
-# GPU 5 >> GPU 1 >> GPU 0 +
-# GPU 6 >> GPU 2 >> GPU 0 +
-# GPU 7 >> GPU 3 >> GPU 0 +
-#          GPU 4 >> GPU 0 +
+# GPU 5 >> GPU 1 +
+# GPU 6 >> GPU 2 +
+# GPU 7 >> GPU 3 +
 # ------------------------+
     # Population arrays on all GPUs are already sorted
     if GPU_ID == 1:
@@ -598,22 +599,45 @@ def migratePopulation_DGX_1(GPU_ID, gpu_count, popsize, pointers, auxiliary_arr,
        
         pop_d = pop_d[pop_d[:,-1].argsort()]
 
+def migratePopulation_P2P(GPU_ID, gpu_count, popsize, pointers, auxiliary_arr, pop_d):
+    if GPU_ID == 0:
+        for ID_ in range(1, gpu_count):
+            # Copy from GPU # ID_ >> GPU 0
+            auxiliary_arr[:, :]    = 0
+            length = floor(popsize/gpu_count)
+            cp.cuda.runtime.memcpyPeer(auxiliary_arr.data.ptr, 0, pointers[ID_], ID_, pop_d.nbytes)
+            try:
+                pop_d[floor(ID_*length) : floor(ID_*popsize/gpu_count)+length, :] = auxiliary_arr[0: length, :]
+            except ValueError:
+                pop_d[floor(ID_*length) : -1, :] = auxiliary_arr[0: length, :]
+
+        pop_d = pop_d[pop_d[:,-1].argsort()]
+       
 def broadcastPopulation_DGX_1(GPU_ID, pointers, pop_d):
     # broadcast updated population at GPU 0 to all GPUs
+    if GPU_ID == 0:
+        # Copy from GPU 0 >> GPU 4
+        cp.cuda.runtime.memcpyPeer(pointers[4], 4, pointers[0], 0, pop_d.nbytes)
 
-    # Copy from GPU 0 >> GPU 4
-    cp.cuda.runtime.memcpyPeer(pointers[4], 4, pointers[0], 0, pop_d.nbytes)
+        # Copy from GPU 0 >> GPU 1 >> GPU 5
+        cp.cuda.runtime.memcpyPeer(pointers[1], 1, pointers[0], 0, pop_d.nbytes)
+        cp.cuda.runtime.memcpyPeer(pointers[5], 5, pointers[1], 1, pop_d.nbytes)
 
-    # Copy from GPU 0 >> GPU 1 >> GPU 5
-    cp.cuda.runtime.memcpyPeer(pointers[1], 1, pointers[0], 0, pop_d.nbytes)
-    cp.cuda.runtime.memcpyPeer(pointers[5], 5, pointers[1], 1, pop_d.nbytes)
+        # Copy from GPU 0 >> GPU 2 >> GPU 6
+        cp.cuda.runtime.memcpyPeer(pointers[2], 2, pointers[0], 0, pop_d.nbytes)
+        cp.cuda.runtime.memcpyPeer(pointers[6], 6, pointers[2], 2, pop_d.nbytes)
 
-    # Copy from GPU 0 >> GPU 2 >> GPU 6
-    cp.cuda.runtime.memcpyPeer(pointers[6], 6, pointers[0], 0, pop_d.nbytes)
-    cp.cuda.runtime.memcpyPeer(pointers[2], 2, pointers[6], 6, pop_d.nbytes)
-
-    # Copy from GPU 0 >> GPU 3 >> GPU 7
-    cp.cuda.runtime.memcpyPeer(pointers[3], 3, pointers[0], 0, pop_d.nbytes)
-    cp.cuda.runtime.memcpyPeer(pointers[7], 7, pointers[3], 3, pop_d.nbytes)
+        # Copy from GPU 0 >> GPU 3 >> GPU 7
+        cp.cuda.runtime.memcpyPeer(pointers[3], 3, pointers[0], 0, pop_d.nbytes)
+        cp.cuda.runtime.memcpyPeer(pointers[7], 7, pointers[3], 3, pop_d.nbytes)
      
     cp.cuda.Device(GPU_ID).synchronize() # Sync all GPUs
+
+def broadcastPopulation_P2P(GPU_ID, pointers, pop_d):
+    # broadcast updated population at GPU 0 to all GPUs
+    if GPU_ID == 0:
+        for ID_ in range(1, gpu_count):
+            # Copy from GPU 0 >> GPU# ID_
+            cp.cuda.runtime.memcpyPeer(pointers[ID_], ID_, pointers[0], 0, pop_d.nbytes)
+     
+    cp.cuda.Device(GPU_ID).synchronize() # Sync all GPUs    
