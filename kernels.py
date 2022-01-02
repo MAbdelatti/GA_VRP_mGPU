@@ -14,6 +14,7 @@ import shutil
 import gpuGrid
 import val
 import time
+import os
 
 # ------------------------- Calculating the cost table --------------------------------------
 @cuda.jit
@@ -631,13 +632,13 @@ def broadcastPopulation_DGX_1(GPU_ID, pointers, pop_d):
         cp.cuda.runtime.memcpyPeer(pointers[3], 3, pointers[0], 0, pop_d.nbytes)
         cp.cuda.runtime.memcpyPeer(pointers[7], 7, pointers[3], 3, pop_d.nbytes)
      
-    cp.cuda.Device(GPU_ID).synchronize() # Sync all GPUs
-
-def broadcastPopulation_P2P(GPU_ID, pointers, pop_d):
+def broadcastPopulation_P2P(GPU_ID, gpu_count, pointers, pop_d):
     # broadcast updated population at GPU 0 to all GPUs
     if GPU_ID == 0:
         for ID_ in range(1, gpu_count):
             # Copy from GPU 0 >> GPU# ID_
             cp.cuda.runtime.memcpyPeer(pointers[ID_], ID_, pointers[0], 0, pop_d.nbytes)
      
-    cp.cuda.Device(GPU_ID).synchronize() # Sync all GPUs    
+def copyPopulation(pop_d, auxiliary_arr):
+    # copy auxiliary_arr values into pop_d
+    pop_d[:,:] = auxiliary_arr[:,:]

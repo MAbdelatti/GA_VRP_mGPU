@@ -121,8 +121,8 @@ node_count              = basic_arguments[1].shape[0]
 totalpopsize            = -(-(n*(node_count - 1))//1000)*1000
 
 # Assign the number of GPUs to use:
-gpu_count               = 1
-# gpu_count               = getGPUCount() # Full utilization of GPUs
+#gpu_count               = 1
+gpu_count               = getGPUCount() # Full utilization of GPUs
 popsize                 = min(totalpopsize//gpu_count, int(50e3))
 
 basic_arguments.append(gpu_count)         # gpu_count 
@@ -142,7 +142,8 @@ tpb_x, tpb_y       = grid.threads_x, grid.threads_y
 basic_arguments.append((blocks_x, blocks_y))  # blocks
 basic_arguments.append((tpb_x, tpb_y))        # threads_per_block
 
-print(grid)  
+print(grid, '\n')
+
 try:
     generations = int(sys.argv[2])
 except:
@@ -154,20 +155,20 @@ basic_arguments.append(generations)
 r_flag = 99999   # A flag for removal/replacement
 basic_arguments.append(r_flag)
 
-try:
-    # Call function in single-thread-multi-GPU model
-    # for GPU_ID in range(gpu_count):
-    #         gpu.gpuWorkLoad(*basic_arguments, GPU_ID)
+#try:
+# Call function in single-thread-multi-GPU model
+# for GPU_ID in range(gpu_count):
+#         gpu.gpuWorkLoad(*basic_arguments, GPU_ID)
+
+# Call function in multi-thread-multi-GPU model
+with concurrent.futures.ThreadPoolExecutor(max_workers=gpu_count) as executor:        
+    pointers = []
+    for GPU_ID in range(gpu_count):
+        pointers.append(executor.submit(gpu.gpuWorkLoad, *basic_arguments, val, GPU_ID))
     
-    # Call function in multi-thread-multi-GPU model
-    with concurrent.futures.ThreadPoolExecutor(max_workers=gpu_count) as executor:        
-        pointers = []
-        for GPU_ID in range(gpu_count):
-            pointers.append(executor.submit(gpu.gpuWorkLoad, *basic_arguments, val, GPU_ID))
-        
-        # for pointer in concurrent.futures.as_completed(pointers):
-        #     print(pointer.result())
+    # for pointer in concurrent.futures.as_completed(pointers):
+    #     print(pointer.result())
 
         
-except error as e:
-    print(e)
+#except error as e:
+#    print(e)

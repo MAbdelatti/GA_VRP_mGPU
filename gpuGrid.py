@@ -6,7 +6,7 @@ class GRID(object):
         self.threads_y     = 16
         self.arrangement   = 1
 
-        self.block_dict    = {1:(4, 4)  , 2:(8, 8)  , 3:(16, 16), 4:(32,32)}
+        self.block_dict    = {1:(4, 4)  , 2:(8, 8)  , 3:(16, 16), 4:(64, 10)}
 
     def __str__(self):
         return 'Grid object has {} blocks and ({}, {}) threads per block'.format(self.block_dict[self.arrangement], self.threads_x, self.threads_y)

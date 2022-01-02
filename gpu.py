@@ -5,7 +5,7 @@ import cupy as cp
 from timeit import default_timer as timer
 import numpy as np
 import random
-import sys
+import sys, os
 from datetime import datetime
 import val
 import time
@@ -24,7 +24,8 @@ def gpuWorkLoad(vrp_capacity, data, opt, filename, gpu_count, n, crossover_prob,
         print('Start time at GPU {} is: {}'.format(GPU_ID, timer()))
         
         data_d             = cuda.to_device(data)
-        print('Data loaded to GPU(s).\n')
+
+        print('Data loaded to GPU {}.'.format(GPU_ID))
 
         # Linear upper triangle of cost table (width=nC2))
         linear_cost_table  = cp.zeros((kernels.nCr(data.shape[0], 2)), dtype=np.int32)
@@ -36,11 +37,11 @@ def gpuWorkLoad(vrp_capacity, data, opt, filename, gpu_count, n, crossover_prob,
 
         # --------------Calculate the cost table----------------------------------------------
         kernels.calculateLinearizedCost[blocks, threads_per_block](data_d, linear_cost_table)
-        print('Cost table calculated successfully.')
+        print('Cost table calculated successfully on GPU {}.'.format(GPU_ID))
 
         # --------------Initialize population-------------------------------------------------
         kernels.initializePop[blocks, threads_per_block](data_d, pop_d)
-        print('Population is initialized successfully.\n')
+        print('Population is initialized successfully on GPU {}.'.format(GPU_ID))
 
         for individual in pop_d:
             cp.random.shuffle(individual[2:-1])
@@ -137,8 +138,9 @@ def gpuWorkLoad(vrp_capacity, data, opt, filename, gpu_count, n, crossover_prob,
             pop_d = pop_d[pop_d[:, -1].argsort()]
 
             cp.cuda.Device(GPU_ID).synchronize()
+
             # GPU array migration is topology specific:
-            if (count+1)%1000 == 0:
+            if (count+1)%20 == 0:
                 if gpu_count == 8: # for hypercube mesh connections like DGX-1
                     kernels.routePopulation_DGX_1(count, GPU_ID, gpu_count, popsize, pointers, auxiliary_arr, pop_d) # migrate populations at remote GPUs nearby
                     cp.cuda.Device(GPU_ID).synchronize() # Sync all GPUs
@@ -147,12 +149,17 @@ def gpuWorkLoad(vrp_capacity, data, opt, filename, gpu_count, n, crossover_prob,
                     cp.cuda.Device(GPU_ID).synchronize() # Sync all GPUs
                     
                     kernels.broadcastPopulation_DGX_1(GPU_ID, pointers, pop_d) # broadcast updated population at GPU 0 to all GPUs
+                    cp.cuda.Device(GPU_ID).synchronize() # Sync all GPUs
 
                 elif gpu_count > 1 and gpu_count < 6: # for P2P-only connection
                     kernels.migratePopulation_P2P(GPU_ID, gpu_count, popsize, pointers, auxiliary_arr, pop_d) # migrate populations to GPU 0
                     cp.cuda.Device(GPU_ID).synchronize() # Sync all GPUs
                     
-                    kernels.broadcastPopulation_P2P(GPU_ID, pointers, pop_d) # broadcast updated population at GPU 0 to all GPUs
+                    kernels.broadcastPopulation_P2P(GPU_ID, gpu_count, pointers, pop_d) # broadcast updated population at GPU 0 to all GPUs
+                    cp.cuda.Device(GPU_ID).synchronize() # Sync all GPUs
+
+                    #kernels.copyPopulation(pop_d, auxiliary_arr)
+                    #cp.cuda.Device(GPU_ID).synchronize() # Sync all GPUs
 
             # Picking best solution:
             best_sol      = pop_d[0, :]
@@ -161,13 +168,13 @@ def gpuWorkLoad(vrp_capacity, data, opt, filename, gpu_count, n, crossover_prob,
             delta         = worst_cost-minimum_cost
             average       = cp.average(pop_d[:,-1])
             
-            if count == 1 and GPU_ID == 0:
-                print('At first generation, Best: %d,'%minimum_cost, 'Worst: %d'%worst_cost, \
-                    'delta: %d'%delta, 'Avg: %.2f'%average)
+            if count == 1:
+                print('On GPU {}, at first generation, Best: {}, Worst: {}, Delta: {}, Avg: {:.2f}'.format(GPU_ID, minimum_cost, worst_cost, \
+                    delta, average))
 
-            elif (count+1)%100 == 0 and GPU_ID == 0:
-                print('After %d generations, Best: %d,'%(count+1, minimum_cost), 'Worst: %d'%worst_cost, \
-                    'delta: %d'%delta, 'Avg: %.2f'%average)
+            elif (count+1)%100 == 0:
+                print('On GPU {}, after {} generations, Best: {}, Worst {}, Delta: {}, Avg: {:.2f}'.format(GPU_ID, count+1, minimum_cost, worst_cost, \
+                    delta, average))
 
             count += 1
 
