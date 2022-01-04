@@ -155,20 +155,20 @@ basic_arguments.append(generations)
 r_flag = 99999   # A flag for removal/replacement
 basic_arguments.append(r_flag)
 
-#try:
+try:
 # Call function in single-thread-multi-GPU model
 # for GPU_ID in range(gpu_count):
 #         gpu.gpuWorkLoad(*basic_arguments, GPU_ID)
 
 # Call function in multi-thread-multi-GPU model
-with concurrent.futures.ThreadPoolExecutor(max_workers=gpu_count) as executor:        
-    pointers = []
-    for GPU_ID in range(gpu_count):
-        pointers.append(executor.submit(gpu.gpuWorkLoad, *basic_arguments, val, GPU_ID))
-    
-    # for pointer in concurrent.futures.as_completed(pointers):
-    #     print(pointer.result())
+    with concurrent.futures.ThreadPoolExecutor(max_workers=gpu_count) as executor:        
+        pointers = []
+        for GPU_ID in range(gpu_count):
+            pointers.append(executor.submit(gpu.gpuWorkLoad, *basic_arguments, val, GPU_ID))
+        
+        # for pointer in concurrent.futures.as_completed(pointers):
+        #     print(pointer.result())
 
         
-#except error as e:
-#    print(e)
+except error as e:
+    print(e)

@@ -16,6 +16,7 @@ import val
 import time
 import os
 
+np.set_printoptions(threshold=sys.maxsize)
 # ------------------------- Calculating the cost table --------------------------------------
 @cuda.jit
 def calculateLinearizedCost(data_d, linear_cost_table):
@@ -602,18 +603,21 @@ def migratePopulation_DGX_1(GPU_ID, gpu_count, popsize, pointers, auxiliary_arr,
 
 def migratePopulation_P2P(GPU_ID, gpu_count, popsize, pointers, auxiliary_arr, pop_d):
     if GPU_ID == 0:
+        print('\nMigrating solutions to GPU 0')
         for ID_ in range(1, gpu_count):
             # Copy from GPU # ID_ >> GPU 0
-            auxiliary_arr[:, :]    = 0
+            auxiliary_arr[:, :]    = 1 
             length = floor(popsize/gpu_count)
+            #print(auxiliary_arr[:, -1])
             cp.cuda.runtime.memcpyPeer(auxiliary_arr.data.ptr, 0, pointers[ID_], ID_, pop_d.nbytes)
+            #print(auxiliary_arr[:, -1])
             try:
                 pop_d[floor(ID_*length) : floor(ID_*popsize/gpu_count)+length, :] = auxiliary_arr[0: length, :]
             except ValueError:
                 pop_d[floor(ID_*length) : -1, :] = auxiliary_arr[0: length, :]
 
-        pop_d = pop_d[pop_d[:,-1].argsort()]
-       
+            pop_d[0, 0] = 99999
+        
 def broadcastPopulation_DGX_1(GPU_ID, pointers, pop_d):
     # broadcast updated population at GPU 0 to all GPUs
     if GPU_ID == 0:
@@ -636,9 +640,7 @@ def broadcastPopulation_P2P(GPU_ID, gpu_count, pointers, pop_d):
     # broadcast updated population at GPU 0 to all GPUs
     if GPU_ID == 0:
         for ID_ in range(1, gpu_count):
-            # Copy from GPU 0 >> GPU# ID_
-            cp.cuda.runtime.memcpyPeer(pointers[ID_], ID_, pointers[0], 0, pop_d.nbytes)
-     
-def copyPopulation(pop_d, auxiliary_arr):
-    # copy auxiliary_arr values into pop_d
-    pop_d[:,:] = auxiliary_arr[:,:]
+            print('\nBroadcasting solutions to GPU {}'.format(ID_))
+            # Copy from GPU 0 >> GPU# ID
+            cp.cuda.runtime.memcpyPeer(pointers[ID_], ID_, pop_d.data.ptr, 0, pop_d.nbytes)
+
