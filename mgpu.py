@@ -121,8 +121,8 @@ node_count              = basic_arguments[1].shape[0]
 totalpopsize            = -(-(n*(node_count - 1))//1000)*1000
 
 # Assign the number of GPUs to use:
-#gpu_count               = 1
-gpu_count               = getGPUCount() # Full utilization of GPUs
+gpu_count               = 2
+# gpu_count               = getGPUCount() # Full utilization of GPUs
 popsize                 = min(totalpopsize//gpu_count, int(50e3))
 
 basic_arguments.append(gpu_count)         # gpu_count 
@@ -170,5 +170,5 @@ try:
         #     print(pointer.result())
 
         
-except error as e:
+except Exception as e:
     print(e)
