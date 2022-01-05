@@ -687,15 +687,12 @@ def migratePopulation_DGX_1(GPU_ID, gpu_count, popsize, pointers, auxiliary_arr,
 def migratePopulation_P2P(GPU_ID, gpu_count, popsize, pointers, auxiliary_arr, pop_d):
     if GPU_ID == 0:
         for ID_ in range(1, gpu_count):
-            print('\nMigrating solutions from {} to GPU 0'.format(ID_))
+            print('\nMigrating solutions from GPU {} to GPU 0'.format(ID_))
             # Copy from GPU # ID_ >> GPU 0
             auxiliary_arr[:, :] = 1
             length = floor(popsize/gpu_count)
-            #print(auxiliary_arr[:, -1])
             cp.cuda.runtime.memcpyPeer(
                 auxiliary_arr.data.ptr, 0, pointers[ID_], ID_, pop_d.nbytes)
-            #print(auxiliary_arr[:, -1])
-            # pop_d[2624:3500+1312, :] = auxiliary_arr[0: 1312, :]
             try:
                 pop_d[floor(ID_*length): floor(ID_*popsize/gpu_count) +
                       length, :] = auxiliary_arr[0: length, :]
