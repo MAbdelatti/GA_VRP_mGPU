@@ -34,7 +34,7 @@ def gpuWorkLoad(vrp_capacity, data, opt, filename, gpu_count, n, crossover_prob,
 
         # Linear upper triangle of cost table (width=nC2))
         linear_cost_table = cp.zeros(
-            (kernels.nCr(data.shape[0], 2)), dtype=np.int32)
+            (kernels.nCr(data.shape[0], 2)), dtype=np.float32)
 
         pop_d = cp.ones((popsize, int(1.5*data.shape[0])+2), dtype=np.int32)
         pointers[GPU_ID] = pop_d.data.ptr
@@ -178,16 +178,19 @@ def gpuWorkLoad(vrp_capacity, data, opt, filename, gpu_count, n, crossover_prob,
                 kernels.elitism(child_d_1, child_d_2, pop_d, popsize)
 
                 pop_d = pop_d[pop_d[:, -1].argsort()]
+                if aux_copy_arr[0, 0] != 99999:
+                    aux_copy_arr[:, :] = pop_d[:, :]
             else:
+                # Receiving population from GPU 0:
                 pop_d[:, :] = aux_copy_arr[:, :]
-
                 pop_d[0, 0] = count
-                aux_copy_arr[:, :] = 0
+                aux_copy_arr[0, 0] = count
 
+            # aux_copy_arr[:, 0] = 99999
             cp.cuda.Device().synchronize()
 
             # GPU array migration is topology specific:
-            if (count+1) % 500 == 0:
+            if (count+1) % 1000 == 0:
                 if gpu_count == 8:  # for hypercube mesh connections like DGX-1
                     # migrate populations at remote GPUs nearby
                     kernels.routePopulation_DGX_1(
@@ -196,10 +199,9 @@ def gpuWorkLoad(vrp_capacity, data, opt, filename, gpu_count, n, crossover_prob,
 
                     # migrate populations to GPU 0
                     kernels.migratePopulation_DGX_1(
-                        GPU_ID, gpu_count, popsize, pointers, auxiliary_arr, pop_d)
+                        GPU_ID, gpu_count, popsize, aux_pointers, auxiliary_arr, pop_d)
                     pop_d = pop_d[pop_d[:, -1].argsort()]
-                    if GPU_ID == 0:
-                        pop_d[0, 0] = 99999
+
                     cp.cuda.Device().synchronize()  # Sync all GPUs
 
                     # broadcast updated population at GPU 0 to all GPUs
@@ -212,10 +214,10 @@ def gpuWorkLoad(vrp_capacity, data, opt, filename, gpu_count, n, crossover_prob,
                 elif gpu_count > 1 and gpu_count < 6:  # for P2P-only connection
                     # migrate populations to GPU 0
                     kernels.migratePopulation_P2P(
-                        GPU_ID, gpu_count, popsize, pointers, auxiliary_arr, pop_d)
+                        GPU_ID, gpu_count, popsize, aux_pointers, auxiliary_arr, pop_d)
                     pop_d = pop_d[pop_d[:, -1].argsort()]
-                    if GPU_ID == 0:
-                        pop_d[0, 0] = 99999
+                    # if GPU_ID == 0:
+                    #     pop_d[0, 0] = 99999
                     cp.cuda.Device().synchronize()  # Sync all GPUs
 
                     # broadcast updated population at GPU 0 to all GPUs
@@ -254,13 +256,15 @@ def gpuWorkLoad(vrp_capacity, data, opt, filename, gpu_count, n, crossover_prob,
 
             # migrate populations to GPU 0
             kernels.migratePopulation_DGX_1(
-                GPU_ID, gpu_count, popsize, pointers, auxiliary_arr, pop_d)
+                GPU_ID, gpu_count, popsize, aux_pointers, auxiliary_arr, pop_d)
+            pop_d = pop_d[pop_d[:, -1].argsort()]
             cp.cuda.Device().synchronize()  # Sync all GPUs
 
         elif gpu_count > 1 and gpu_count < 6:  # for P2P-only connection
             # migrate populations to GPU 0
             kernels.migratePopulation_P2P(
-                GPU_ID, gpu_count, popsize, pointers, auxiliary_arr, pop_d)
+                GPU_ID, gpu_count, popsize, aux_pointers, auxiliary_arr, pop_d)
+            pop_d = pop_d[pop_d[:, -1].argsort()]
             cp.cuda.Device().synchronize()  # Sync all GPUs
 
         if GPU_ID == 0:

@@ -76,7 +76,7 @@ def computeFitness(linear_cost_table, pop, n):
                 k = int(j - (i*(0.5*i - n + 1.5)) - 1)
 
                 cuda.atomic.add(
-                    pop, (row, pop.shape[1]-1), linear_cost_table[k])
+                    pop, (row, pop.shape[1]-1), int(linear_cost_table[k])*1000)
 
 # ------------------------- Refining solutions ---------------------------------------------
 
@@ -625,7 +625,7 @@ def routePopulation_DGX_1(count, GPU_ID, gpu_count, popsize, pointers, auxiliary
             cp.cuda.runtime.memcpyPeer(
                 auxiliary_arr.data.ptr, GPU_ID, pointers[5], 5, pop_d.nbytes)
             pop_d[floor(popsize/gpu_count): floor(2*popsize/gpu_count),
-                :] = auxiliary_arr[0: (floor(2*popsize/gpu_count)-floor(popsize/gpu_count)), :]
+                  :] = auxiliary_arr[0: (floor(2*popsize/gpu_count)-floor(popsize/gpu_count)), :]
 
         if GPU_ID == 2:
             # Copy from GPU 6 >> GPU 2
@@ -633,7 +633,7 @@ def routePopulation_DGX_1(count, GPU_ID, gpu_count, popsize, pointers, auxiliary
             cp.cuda.runtime.memcpyPeer(
                 auxiliary_arr.data.ptr, GPU_ID, pointers[6], 6, pop_d.nbytes)
             pop_d[floor(popsize/gpu_count): floor(2*popsize/gpu_count),
-                :] = auxiliary_arr[0: (floor(2*popsize/gpu_count)-floor(popsize/gpu_count)), :]
+                  :] = auxiliary_arr[0: (floor(2*popsize/gpu_count)-floor(popsize/gpu_count)), :]
 
         if GPU_ID == 3:
             # Copy from GPU 7 >> GPU 3
@@ -641,7 +641,7 @@ def routePopulation_DGX_1(count, GPU_ID, gpu_count, popsize, pointers, auxiliary
             cp.cuda.runtime.memcpyPeer(
                 auxiliary_arr.data.ptr, GPU_ID, pointers[7], 7, pop_d.nbytes)
             pop_d[floor(popsize/gpu_count): floor(2*popsize/gpu_count),
-                :] = auxiliary_arr[0: (floor(2*popsize/gpu_count)-floor(popsize/gpu_count)), :]
+                  :] = auxiliary_arr[0: (floor(2*popsize/gpu_count)-floor(popsize/gpu_count)), :]
     except:
         pass
 
@@ -655,7 +655,7 @@ def migratePopulation_DGX_1(GPU_ID, gpu_count, popsize, pointers, auxiliary_arr,
             cp.cuda.runtime.memcpyPeer(
                 auxiliary_arr.data.ptr, GPU_ID, pointers[4], 4, pop_d.nbytes)
             pop_d[floor(popsize/gpu_count): floor(2*popsize/gpu_count),
-                :] = auxiliary_arr[0: floor(2*popsize/gpu_count)-floor(popsize/gpu_count), :]
+                  :] = auxiliary_arr[0: floor(2*popsize/gpu_count)-floor(popsize/gpu_count), :]
 
             # Copy from GPU 1 >> GPU 0
             auxiliary_arr[:, :] = 0
@@ -663,7 +663,7 @@ def migratePopulation_DGX_1(GPU_ID, gpu_count, popsize, pointers, auxiliary_arr,
                 auxiliary_arr.data.ptr, GPU_ID, pointers[1], 1, pop_d.nbytes)
             # pop_d[2*popsize/gpu_count : 4*popsize/gpu_count, :] = auxiliary_arr[0 : 2*popsize/gpu_count, :]
             pop_d[floor(2*popsize/gpu_count): floor(4*popsize/gpu_count),
-                :] = auxiliary_arr[0: floor(4*popsize/gpu_count)-floor(2*popsize/gpu_count), :]
+                  :] = auxiliary_arr[0: floor(4*popsize/gpu_count)-floor(2*popsize/gpu_count), :]
 
             # Copy from GPU 2 >> GPU 0
             auxiliary_arr[:, :] = 0
@@ -671,7 +671,7 @@ def migratePopulation_DGX_1(GPU_ID, gpu_count, popsize, pointers, auxiliary_arr,
                 auxiliary_arr.data.ptr, GPU_ID, pointers[2], 2, pop_d.nbytes)
             # pop_d[4*popsize/gpu_count : 6*popsize/gpu_count, :] = auxiliary_arr[0 : 2*popsize/gpu_count, :]
             pop_d[floor(4*popsize/gpu_count): floor(6*popsize/gpu_count),
-                :] = auxiliary_arr[0: floor(6*popsize/gpu_count)-floor(4*popsize/gpu_count), :]
+                  :] = auxiliary_arr[0: floor(6*popsize/gpu_count)-floor(4*popsize/gpu_count), :]
 
             # Copy from GPU 3 >> GPU 0
             auxiliary_arr[:, :] = 0
@@ -679,7 +679,7 @@ def migratePopulation_DGX_1(GPU_ID, gpu_count, popsize, pointers, auxiliary_arr,
                 auxiliary_arr.data.ptr, GPU_ID, pointers[3], 3, pop_d.nbytes)
             # pop_d[6*popsize/gpu_count : -1, :] = auxiliary_arr[0 : 2*popsize/gpu_count, :]
             pop_d[floor(6*popsize/gpu_count): -1,
-                :] = auxiliary_arr[0: (popsize - floor(6*popsize/gpu_count)-1), :]
+                  :] = auxiliary_arr[0: (popsize - floor(6*popsize/gpu_count)-1), :]
         except:
             pass
 
@@ -689,10 +689,11 @@ def migratePopulation_P2P(GPU_ID, gpu_count, popsize, pointers, auxiliary_arr, p
         for ID_ in range(1, gpu_count):
             print('\nMigrating solutions from GPU {} to GPU 0'.format(ID_))
             # Copy from GPU # ID_ >> GPU 0
-            auxiliary_arr[:, :] = 1
+            auxiliary_arr[:, :] = 11111
             length = floor(popsize/gpu_count)
             cp.cuda.runtime.memcpyPeer(
                 auxiliary_arr.data.ptr, 0, pointers[ID_], ID_, pop_d.nbytes)
+            # print('HERE', auxiliary_arr[:,0])
             try:
                 pop_d[floor(ID_*length): floor(ID_*popsize/gpu_count) +
                       length, :] = auxiliary_arr[0: length, :]
@@ -700,15 +701,17 @@ def migratePopulation_P2P(GPU_ID, gpu_count, popsize, pointers, auxiliary_arr, p
                 # print(e)
                 try:
                     pop_d[floor(ID_*length): floor(ID_*popsize/gpu_count) +
-                      length, :] = auxiliary_arr[0: length+1, :]
+                          length, :] = auxiliary_arr[0: length+1, :]
                 except Exception as f:
                     print(f, auxiliary_arr.shape, length, ID_)
-                    pass   
+                    pass
+
 
 def broadcastPopulation_DGX_1(GPU_ID, pointers, pop_d):
     # broadcast updated population at GPU 0 to all GPUs
     try:
         if GPU_ID == 0:
+            pop_d[0, 0] = 99999
             # Copy from GPU 0 >> GPU 4
             print('\nBroadcasting solutions to GPU 4')
             cp.cuda.runtime.memcpyPeer(
@@ -750,5 +753,6 @@ def broadcastPopulation_P2P(GPU_ID, gpu_count, pointers, pop_d):
         for ID_ in range(1, gpu_count):
             print('\nBroadcasting solutions to GPU {}'.format(ID_))
             # Copy from GPU 0 >> GPU# ID
+            pop_d[0, 0] = 99999
             cp.cuda.runtime.memcpyPeer(
                 pointers[ID_], ID_, pop_d.data.ptr, 0, pop_d.nbytes)
