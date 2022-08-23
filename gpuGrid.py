@@ -8,11 +8,12 @@ class GRID(object):
         self.arrangement = 1
 
         self.block_dict = {
-            1: (4, 4),
-            2: (8, 8),
-            3: (8, 16),
-            4: (16, 16),
-            5: (32, 16)}
+            1: (1, 16),
+            2: (5, 16),
+            3: (10, 16),
+            4: (32, 16),
+            5: (64, 16),
+            6: (125, 16)}
 
     def __str__(self):
         return 'Grid object has {} blocks and ({}, {}) threads per block'.format(self.block_dict[self.arrangement], self.threads_x, self.threads_y)
@@ -21,11 +22,11 @@ class GRID(object):
         if n <= 350:
             self.arrangement = 1
         elif n <= 600:
-            self.arrangement = 2
+            self.arrangement = 1
         elif n <= 800:
             self.arrangement = 3
         elif n > 800:
-            self.arrangement = 5
+            self.arrangement = 3 
 
         return self.block_dict[self.arrangement][0], self.block_dict[self.arrangement][1]
 

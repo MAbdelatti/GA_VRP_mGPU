@@ -134,8 +134,8 @@ node_count = basic_arguments[1].shape[0]
 totalpopsize = -(-(n*(node_count - 1))//1000)*1000
 
 # Assign the number of GPUs to use:
-# gpu_count = 1
-gpu_count = getGPUCount()  # Full utilization of GPUs
+gpu_count = 1
+# gpu_count = getGPUCount()  # Full utilization of GPUs
 popsize = min(totalpopsize//gpu_count, int(50e3))
 
 basic_arguments.append(gpu_count)         # gpu_count
@@ -179,6 +179,9 @@ try:
         for GPU_ID in range(gpu_count):
             pointers.append(executor.submit(
                 gpu.gpuWorkLoad, *basic_arguments, val, GPU_ID))
+
+        # pointers.append(executor.submit(
+        #         gpu.gpuWorkLoad, *basic_arguments, val, 6))
 
         # for pointer in concurrent.futures.as_completed(pointers):
         #     print(pointer.result())

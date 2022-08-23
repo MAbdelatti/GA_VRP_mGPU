@@ -76,8 +76,19 @@ def computeFitness(linear_cost_table, pop, n):
                 k = int(j - (i*(0.5*i - n + 1.5)) - 1)
 
                 cuda.atomic.add(
-                    pop, (row, pop.shape[1]-1), int(linear_cost_table[k])*1000)
+                    pop, (row, pop.shape[1]-1), int(linear_cost_table[k])*1)
 
+def computeFitnessCPU(linear_cost_table, pop, n):
+    for row in range(0, pop.shape[0]):
+        for col in range(0, pop.shape[1]-2):
+            i = min(pop[row, col]-1, pop[row, col+1]-1)
+            j = max(pop[row, col]-1, pop[row, col+1]-1)
+
+            if i != j:
+                k = int(j - (i*(0.5*i - n + 1.5)) - 1)
+
+                pop[row, pop.shape[1]-1] += int(linear_cost_table[k])*1
+                
 # ------------------------- Refining solutions ---------------------------------------------
 
 
@@ -743,7 +754,8 @@ def broadcastPopulation_DGX_1(GPU_ID, pointers, pop_d):
             print('\nBroadcasting solutions to GPU 7')
             cp.cuda.runtime.memcpyPeer(
                 pointers[7], 7, pointers[3], 3, pop_d.nbytes)
-    except:
+    except Exception as e:
+        print(e)
         pass
 
 

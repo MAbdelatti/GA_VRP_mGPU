@@ -70,6 +70,44 @@ def gpuWorkLoad(vrp_capacity, data, opt, filename, gpu_count, n, crossover_prob,
         kernels.computeFitness[blocks, threads_per_block](
             linear_cost_table, pop_d, data_d.shape[0])
 
+        # print('computing fitness...')
+        # time_list = []
+        
+        # counter = 0
+        # for i in range(100000):
+        #     start_time = timer()
+        #     pop_d[:, -1] = 0
+        #     kernels.computeFitness[blocks, threads_per_block](
+        #         linear_cost_table, pop_d, data_d.shape[0])
+        #     end_time = timer()
+        #     time_list.append(end_time - start_time)
+        
+        #     counter += 1
+        #     if counter%1000 == 0:
+        #         print('---- Done {} fitness computations ----'.format(counter))               
+
+        # print('Average time of new function: {} seconds +/- {}'.format(np.mean(time_list), np.std(time_list)))
+        # exit(1)
+
+        # print('computing fitness...')
+        # time_list = []
+        
+        # counter = 0
+        # for i in range(10000):
+        #     start_time = timer()
+        #     sum_arr = np.sum(pop_d, axis=1)
+        #     for row in range(pop_d.shape[0]):
+        #         pop_d[row, -1] = sum_arr[row]
+        #     end_time = timer()
+        #     time_list.append(end_time - start_time)
+        
+        #     counter += 1
+        #     if counter%100 == 0:
+        #         print('---- Done {} fitness computations ----'.format(counter))               
+
+        # print('Average time of new function: {} seconds +/- {}'.format(np.mean(time_list), np.std(time_list)))
+        # exit(1)
+
         # ------------------------Evolve population for some generations------------------------
         parent_idx = cp.ones((popsize, 2), dtype=cp.int32)
         child_d_1 = cp.ones((popsize, pop_d.shape[1]), dtype=cp.int32)
@@ -190,7 +228,7 @@ def gpuWorkLoad(vrp_capacity, data, opt, filename, gpu_count, n, crossover_prob,
             cp.cuda.Device().synchronize()
 
             # GPU array migration is topology specific:
-            if (count+1) % 1000 == 0:
+            if (count+1) % 10000 == 0:
                 if gpu_count == 8:  # for hypercube mesh connections like DGX-1
                     # migrate populations at remote GPUs nearby
                     kernels.routePopulation_DGX_1(
@@ -216,15 +254,12 @@ def gpuWorkLoad(vrp_capacity, data, opt, filename, gpu_count, n, crossover_prob,
                     kernels.migratePopulation_P2P(
                         GPU_ID, gpu_count, popsize, aux_pointers, auxiliary_arr, pop_d)
                     pop_d = pop_d[pop_d[:, -1].argsort()]
-                    # if GPU_ID == 0:
-                    #     pop_d[0, 0] = 99999
                     cp.cuda.Device().synchronize()  # Sync all GPUs
 
                     # broadcast updated population at GPU 0 to all GPUs
                     kernels.broadcastPopulation_P2P(
                         GPU_ID, gpu_count, aux_pointers, pop_d)
                     pop_d[0, 0] = count
-
                     cp.cuda.Device().synchronize()  # Sync all GPUs
 
             # Picking best solution:
@@ -238,7 +273,7 @@ def gpuWorkLoad(vrp_capacity, data, opt, filename, gpu_count, n, crossover_prob,
                 print('On GPU {}, at first generation, Best: {}, Worst: {}, Delta: {}, Avg: {}'.format(GPU_ID, minimum_cost, worst_cost,
                                                                                                        delta, average))
 
-            elif (count+1) % 100 == 0:
+            elif (count+1) % 10 == 0:
                 print('On GPU {}, after {} generations, Best: {}, Worst {}, Delta: {}, Avg: {}'.format(GPU_ID, count+1, minimum_cost, worst_cost,
                                                                                                        delta, average))
 
