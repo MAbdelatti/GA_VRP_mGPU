@@ -9,7 +9,7 @@ python3 mgpu.py journal-set/Golden/Golden_12.vrp 10000 0 20 60 30 >> Golden12.ou
 
 To utilize different GPU arrangements (e.g., 1, 2, or 4) replace the **mgpu.py** file with either: **mgpu-1.py, mgpu-2.py, or mgpu-4.py**, respectively.
 
-The following example runs the algorithm with the same setings dicussed above on platform with **slurm** workload manager:
+The following example runs the algorithm with the same setings dicussed above on a platform with **slurm** workload manager:
 
 ```bash
 srun -p dgx python3 -u mgpu.py journal-set/Golden/Golden_12.vrp 10000 0 20 60 30 >> Golden12.out &
