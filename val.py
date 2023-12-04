@@ -3,7 +3,6 @@ import os
 
 class VRP(object):
     def __init__(self, problem, n):
-        print('constructor called')
         self.file = (os.path.basename(problem))
         self.n = n
         # self.routes = np.int64(self.file.split('-')[2][1:])
@@ -12,7 +11,6 @@ class VRP(object):
         self.log = validation + 'validate_' + self.file + '_' + str(len(os.listdir(validation))) + '.out'
         f = open(self.log, 'w')
         f.close()
-        print('constructor finished')
       
     def __demand(self, text):
         demand = []

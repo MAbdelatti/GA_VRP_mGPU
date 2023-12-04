@@ -23,11 +23,9 @@ def getGPUCount():
     cudaDrv = driver.Driver()
     return cudaDrv.get_device_count()
 
-print('Program started')
 # read problem file and save vrp_capacity, data, opt into basic_arguments list
 basic_arguments = readInput.readInput()
 basic_arguments.append(sys.argv[1])  # filename
-print('calling constructor')
 
 val = val.VRP(sys.argv[1], basic_arguments[1].shape[0])
 n = int(sys.argv[4])
