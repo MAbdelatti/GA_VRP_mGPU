@@ -2,6 +2,7 @@
 # -------- Start of the importing part -----------
 import gpu
 import readInput
+import gpuInfo
 from numba import cuda
 from numba.cuda import driver
 import concurrent.futures
@@ -34,6 +35,9 @@ totalpopsize = -(-(n * (node_count - 1)) // 1000) * 1000
 
 # Assign the number of GPUs to use:
 # gpu_count = 1
+print(gpuInfo.get_gpu_topology())
+exit()
+
 gpu_count = getGPUCount()  # Full utilization of GPUs
 popsize = min(totalpopsize // gpu_count, int(50e3))
 

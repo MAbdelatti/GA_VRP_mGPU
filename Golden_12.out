@@ -1,148 +1,40 @@
-Program started
 Reading data file... 
 Manual optimal value entered: 0
 Done.
-calling constructor
-constructor called
-constructor finished
+	[4mGPU0	GPU1	GPU2	GPU3	GPU4	GPU5	GPU6	CPU Affinity	NUMA Affinity[0m
+GPU0	 X 	SYS	SYS	SYS	SYS	SYS	SYS	0	0-1
+GPU1	SYS	 X 	PIX	SYS	SYS	SYS	SYS	0	0-1
+GPU2	SYS	PIX	 X 	SYS	SYS	SYS	SYS	0	0-1
+GPU3	SYS	SYS	SYS	 X 	PIX	SYS	SYS	0	0-1
+GPU4	SYS	SYS	SYS	PIX	 X 	SYS	SYS	0	0-1
+GPU5	SYS	SYS	SYS	SYS	SYS	 X 	PIX	0	0-1
+GPU6	SYS	SYS	SYS	SYS	SYS	PIX	 X 	0	0-1
 
-Found 1 GPUs to Utilize.
+Legend:
 
-Population size assigned to be 20*n with 10000 per GPU. Total of 10000.  
+  X    = Self
+  SYS  = Connection traversing PCIe as well as the SMP interconnect between NUMA nodes (e.g., QPI/UPI)
+  NODE = Connection traversing PCIe as well as the interconnect between PCIe Host Bridges within a NUMA node
+  PHB  = Connection traversing PCIe as well as a PCIe Host Bridge (typically the CPU)
+  PXB  = Connection traversing multiple PCIe bridges (without traversing the PCIe Host Bridge)
+  PIX  = Connection traversing at most a single PCIe bridge
+  NV#  = Connection traversing a bonded set of # NVLinks
 
-Grid object has (1, 16) blocks and (32, 16) threads per block 
+{'GPU0': {'GPU0': 'X', 'GPU1': 'SYS', 'GPU2': 'SYS', 'GPU3': 'SYS', 'GPU4': 'SYS', 'GPU5': 'SYS', 'GPU6': 'SYS'}, 'GPU1': {'GPU0': 'SYS', 'GPU1': 'X', 'GPU2': 'PIX', 'GPU3': 'SYS', 'GPU4': 'SYS', 'GPU5': 'SYS', 'GPU6': 'SYS'}, 'GPU2': {'GPU0': 'SYS', 'GPU1': 'PIX', 'GPU2': 'X', 'GPU3': 'SYS', 'GPU4': 'SYS', 'GPU5': 'SYS', 'GPU6': 'SYS'}, 'GPU3': {'GPU0': 'SYS', 'GPU1': 'SYS', 'GPU2': 'SYS', 'GPU3': 'X', 'GPU4': 'PIX', 'GPU5': 'SYS', 'GPU6': 'SYS'}, 'GPU4': {'GPU0': 'SYS', 'GPU1': 'SYS', 'GPU2': 'SYS', 'GPU3': 'PIX', 'GPU4': 'X', 'GPU5': 'SYS', 'GPU6': 'SYS'}, 'GPU5': {'GPU0': 'SYS', 'GPU1': 'SYS', 'GPU2': 'SYS', 'GPU3': 'SYS', 'GPU4': 'SYS', 'GPU5': 'X', 'GPU6': 'PIX'}, 'GPU6': {'GPU0': 'SYS', 'GPU1': 'SYS', 'GPU2': 'SYS', 'GPU3': 'SYS', 'GPU4': 'SYS', 'GPU5': 'PIX', 'GPU6': 'X'}}
+Reading data file... 
+Manual optimal value entered: 0
+Done.
+	[4mGPU0	CPU Affinity	NUMA Affinity[0m
+GPU0	 X 	0	0-1
 
-Start time at GPU 0 is: 1374442.21310744
-Data loaded to GPU 0.
-Cost table calculated successfully on GPU 0.
-Population is initialized successfully on GPU 0.
-On GPU 0, at first generation, Best: 7438, Worst: 8108, Delta: 670, Avg: 7810.1698
-On GPU 0, after 10 generations, Best: 6751, Worst 7168, Delta: 417, Avg: 7021.3884
-On GPU 0, after 20 generations, Best: 6287, Worst 6539, Delta: 252, Avg: 6416.7857
-On GPU 0, after 30 generations, Best: 5883, Worst 6041, Delta: 158, Avg: 5979.2912
-On GPU 0, after 40 generations, Best: 5579, Worst 5722, Delta: 143, Avg: 5672.9957
-On GPU 0, after 50 generations, Best: 5390, Worst 5472, Delta: 82, Avg: 5443.0983
-On GPU 0, after 60 generations, Best: 5230, Worst 5316, Delta: 86, Avg: 5279.0734
-On GPU 0, after 70 generations, Best: 5086, Worst 5154, Delta: 68, Avg: 5125.2963
-On GPU 0, after 80 generations, Best: 4928, Worst 4996, Delta: 68, Avg: 4962.9515
-On GPU 0, after 90 generations, Best: 4832, Worst 4882, Delta: 50, Avg: 4868.9468
-On GPU 0, after 100 generations, Best: 4736, Worst 4783, Delta: 47, Avg: 4764.6199
----------
-Problem: journal-set/Golden/Golden_12.vrp, Best known: 0
-Stopped at generation 100, Best cost: 4723, from Generation: 100
----------
-Best solution: [ 100    0  129    0    6  361  267  280  394  277  420  383  110  439
-  391  335  175  314  396  424  443  435  352  310  307  266    1    0
-  195  198  453  467  477  446  140    5  203  366  395  369  295  482
-  414  289  461  263  454  317  441  409  442  353  381  382  428  413
-  385  367  287  270  207    0  234  178  159  153  253  231  199  247
-  252  251   36   19  101   42   21  144   35   90  147   34   17    0
-  126  187   73  115  249  363  472  318  188  268  456  415  451  450
-  455  462  476  463  331  315  121  254  233  210   95   77  170  227
-  440   62  107  333   29    0   54   87  286  131  145  167  186   63
-   49  155  313  340  421  469  376  405  311  357  475  418  448  412
-  436  148  403  204  329  422  347  113   65    0  355  432  229  417
-  465  339  136  255  406  408  336  433  305  434  444  386  206  291
-  327  377  306   88  208  152  200  220  173   91  256  278  294  120
-  157  449  232  191  176    0   69   80   92   79  238  138   78   48
-  127  237  239  128  164  248  184  114  236  276  429  241  323   51
-    0    2   40   57   37   26   50   44   76  181   74   59  108    0
-   10   99   56   58  163  183   86  132  133  104   41  297  158  171
-  156  106  162  166   12    0  189  168  172  194  212  192   60  182
-  185  458  160  216  211  213  105   84    7  431  326  460  356  404
-  416  250  116   43    0   71  240  365  316  259  380  349  354  345
-  341  360  343  325  292  330  362  322  338  309  285  258  260  387
-  284  298  282  371  269  328  427  375  209  372  389  378  273    0
-    8  180  217  179  320  271  390  480  483  384  374  373  332  296
-  174  303  393  257  262  397  457  459  244  124   66  135  134   98
-    0   18  165  302  274  221  214  218  264  272  293  312  290  265
-   93   83  344  392  425  350  154  299  401  430  193  279  379  474
-  470  337  190    0    9   64  205  149  288  402  471  281  283  304
-  359  426  438  479  478  423  419  452  473  400  399  410  411  334
-  351  407  464  466  468  445  358  308  243  246    0    4    3   16
-   32  197  196  388  321  219  275  364  111  222    0   52  118  102
-  100   53   85  161  319  368  112   30   13   61   33   82   22    0
-   39   81  123  143  142   70  130  223  103   75   97  215   94   68
-  324  447  150  202  261  177  348  300  139  235  109    0  146   89
-  169  346  437  301  398  370  481  342  141  125   45   31  137   67
-   46   72  119  230  151  117   14    0   11   15  201   27   23   38
-  242  245  226  228  224  225   20   47   55  122   96   28    0   25
-   24    0    0    0    0    0    0    0    0    0    0    0    0    0
-    0    0    0    0    0    0    0    0    0    0    0    0    0    0
-    0    0    0    0    0    0    0    0    0    0    0    0    0    0
-    0    0    0    0    0    0    0    0    0    0    0    0    0    0
-    0    0    0    0    0    0    0    0    0    0    0    0    0    0
-    0    0    0    0    0    0    0    0    0    0    0    0    0    0
-    0    0    0    0    0    0    0    0    0    0    0    0    0    0
-    0    0    0    0    0    0    0    0    0    0    0    0    0    0
-    0    0    0    0    0    0    0    0    0    0    0    0    0    0
-    0    0    0    0    0    0    0    0    0    0    0    0    0    0
-    0    0    0    0    0    0    0    0    0    0    0    0    0    0
-    0    0    0    0    0    0    0    0    0    0    0    0    0    0
-    0    0    0    0    0    0    0    0    0    0    0    0    0    0
-    0    0    0    0    0    0    0    0    0    0    0    0    0    0
-    0    0    0    0    0    0    0    0    0    0    0    0    0    0
-    0    0    0    0    0    0    0    0    0    0    0    0    0 4723]
----------
-Time elapsed: 655.0851 secs Time per loop: 6.5509 secs
----------
-[Errno 2] No such file or directory: 'results/journal-set/Golden/Golden_12.vrp2023-12-04 18:09:08.084882.out'
----------
-Problem: journal-set/Golden/Golden_12.vrp, Best known: 0
-Stopped at generation 100, Best cost: 4723, from Generation: 100
----------
-Best solution: [ 100    0  129    0    6  361  267  280  394  277  420  383  110  439
-  391  335  175  314  396  424  443  435  352  310  307  266    1    0
-  195  198  453  467  477  446  140    5  203  366  395  369  295  482
-  414  289  461  263  454  317  441  409  442  353  381  382  428  413
-  385  367  287  270  207    0  234  178  159  153  253  231  199  247
-  252  251   36   19  101   42   21  144   35   90  147   34   17    0
-  126  187   73  115  249  363  472  318  188  268  456  415  451  450
-  455  462  476  463  331  315  121  254  233  210   95   77  170  227
-  440   62  107  333   29    0   54   87  286  131  145  167  186   63
-   49  155  313  340  421  469  376  405  311  357  475  418  448  412
-  436  148  403  204  329  422  347  113   65    0  355  432  229  417
-  465  339  136  255  406  408  336  433  305  434  444  386  206  291
-  327  377  306   88  208  152  200  220  173   91  256  278  294  120
-  157  449  232  191  176    0   69   80   92   79  238  138   78   48
-  127  237  239  128  164  248  184  114  236  276  429  241  323   51
-    0    2   40   57   37   26   50   44   76  181   74   59  108    0
-   10   99   56   58  163  183   86  132  133  104   41  297  158  171
-  156  106  162  166   12    0  189  168  172  194  212  192   60  182
-  185  458  160  216  211  213  105   84    7  431  326  460  356  404
-  416  250  116   43    0   71  240  365  316  259  380  349  354  345
-  341  360  343  325  292  330  362  322  338  309  285  258  260  387
-  284  298  282  371  269  328  427  375  209  372  389  378  273    0
-    8  180  217  179  320  271  390  480  483  384  374  373  332  296
-  174  303  393  257  262  397  457  459  244  124   66  135  134   98
-    0   18  165  302  274  221  214  218  264  272  293  312  290  265
-   93   83  344  392  425  350  154  299  401  430  193  279  379  474
-  470  337  190    0    9   64  205  149  288  402  471  281  283  304
-  359  426  438  479  478  423  419  452  473  400  399  410  411  334
-  351  407  464  466  468  445  358  308  243  246    0    4    3   16
-   32  197  196  388  321  219  275  364  111  222    0   52  118  102
-  100   53   85  161  319  368  112   30   13   61   33   82   22    0
-   39   81  123  143  142   70  130  223  103   75   97  215   94   68
-  324  447  150  202  261  177  348  300  139  235  109    0  146   89
-  169  346  437  301  398  370  481  342  141  125   45   31  137   67
-   46   72  119  230  151  117   14    0   11   15  201   27   23   38
-  242  245  226  228  224  225   20   47   55  122   96   28    0   25
-   24    0    0    0    0    0    0    0    0    0    0    0    0    0
-    0    0    0    0    0    0    0    0    0    0    0    0    0    0
-    0    0    0    0    0    0    0    0    0    0    0    0    0    0
-    0    0    0    0    0    0    0    0    0    0    0    0    0    0
-    0    0    0    0    0    0    0    0    0    0    0    0    0    0
-    0    0    0    0    0    0    0    0    0    0    0    0    0    0
-    0    0    0    0    0    0    0    0    0    0    0    0    0    0
-    0    0    0    0    0    0    0    0    0    0    0    0    0    0
-    0    0    0    0    0    0    0    0    0    0    0    0    0    0
-    0    0    0    0    0    0    0    0    0    0    0    0    0    0
-    0    0    0    0    0    0    0    0    0    0    0    0    0    0
-    0    0    0    0    0    0    0    0    0    0    0    0    0    0
-    0    0    0    0    0    0    0    0    0    0    0    0    0    0
-    0    0    0    0    0    0    0    0    0    0    0    0    0    0
-    0    0    0    0    0    0    0    0    0    0    0    0    0    0
-    0    0    0    0    0    0    0    0    0    0    0    0    0 4723]
----------
-Time elapsed: 655.106 secs Time per loop: 6.5511 secs
----------
+Legend:
+
+  X    = Self
+  SYS  = Connection traversing PCIe as well as the SMP interconnect between NUMA nodes (e.g., QPI/UPI)
+  NODE = Connection traversing PCIe as well as the interconnect between PCIe Host Bridges within a NUMA node
+  PHB  = Connection traversing PCIe as well as a PCIe Host Bridge (typically the CPU)
+  PXB  = Connection traversing multiple PCIe bridges (without traversing the PCIe Host Bridge)
+  PIX  = Connection traversing at most a single PCIe bridge
+  NV#  = Connection traversing a bonded set of # NVLinks
+
+{'GPU0': {'GPU0': 'X'}}
