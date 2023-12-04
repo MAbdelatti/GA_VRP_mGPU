@@ -16,20 +16,6 @@ import time
 # use maximum length in screen output
 np.set_printoptions(threshold=sys.maxsize)
 
-# ------------------------- Reading problem data file -------------------------------------------
-
-
-class vrp:
-    def __init__(self, capacity=0, opt=0):
-        self.capacity = capacity
-        self.opt = opt
-        self.nodes = np.zeros((1, 4), dtype=np.float32)
-
-    def addNode(self, label, demand, posX, posY):
-        newrow = np.array([label, demand, posX, posY], dtype=np.float32)
-        self.nodes = np.vstack((self.nodes, newrow))
-
-
 # ---------------------------------- Obtain the number of available CUDA GPUs -----------------------------
 
 
@@ -37,10 +23,11 @@ def getGPUCount():
     cudaDrv = driver.Driver()
     return cudaDrv.get_device_count()
 
-
+print('Program started')
 # read problem file and save vrp_capacity, data, opt into basic_arguments list
-basic_arguments = readInput()
+basic_arguments = readInput.readInput()
 basic_arguments.append(sys.argv[1])  # filename
+print('calling constructor')
 
 val = val.VRP(sys.argv[1], basic_arguments[1].shape[0])
 n = int(sys.argv[4])

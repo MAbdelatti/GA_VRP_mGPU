@@ -1,3 +1,18 @@
+import numpy as np
+import sys
+
+# ------------------------- Reading problem data file -------------------------------------------
+
+class vrp:
+    def __init__(self, capacity=0, opt=0):
+        self.capacity = capacity
+        self.opt = opt
+        self.nodes = np.zeros((1, 4), dtype=np.float32)
+
+    def addNode(self, label, demand, posX, posY):
+        newrow = np.array([label, demand, posX, posY], dtype=np.float32)
+        self.nodes = np.vstack((self.nodes, newrow))
+
 def readInput():
     # Create VRP object:
     vrpManager = vrp()

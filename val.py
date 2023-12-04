@@ -3,14 +3,16 @@ import os
 
 class VRP(object):
     def __init__(self, problem, n):
-        self.file = problem
+        print('constructor called')
+        self.file = (os.path.basename(problem))
         self.n = n
         # self.routes = np.int64(self.file.split('-')[2][1:])
-        
+
         validation = 'results/validation/'
-        self.log = validation + 'validate_' + problem + '_' + str(len(os.listdir(validation))) + '.out' 
+        self.log = validation + 'validate_' + self.file + '_' + str(len(os.listdir(validation))) + '.out'
         f = open(self.log, 'w')
         f.close()
+        print('constructor finished')
       
     def __demand(self, text):
         demand = []
@@ -30,7 +32,11 @@ class VRP(object):
         self.coordinates = np.array(coords, dtype=np.float64)
    
     def read(self):
+        # try:
         f = open(self.file, 'r')
+        # except FileNotFoundError:
+        #     print('Warning: No such file or directory, creating one')
+
         text = f.readlines()
 
         for i, line in enumerate(text):
