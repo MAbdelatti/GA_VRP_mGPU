@@ -13,16 +13,11 @@ import gpuGrid
 import val
 import time
 
-# -------- End of the importing part -----------
 # use maximum length in screen output
 np.set_printoptions(threshold=sys.maxsize)
 
-# ---------------------------------- Obtain the number of available CUDA GPUs -----------------------------
-
-
-def getGPUCount():
-    cudaDrv = driver.Driver()
-    return cudaDrv.get_device_count()
+def communicateInfo():
+    pass
 
 # read problem file and save vrp_capacity, data, opt into basic_arguments list
 basic_arguments = readInput.readInput()
@@ -33,13 +28,19 @@ n = int(sys.argv[4])
 node_count = basic_arguments[1].shape[0]
 totalpopsize = -(-(n * (node_count - 1)) // 1000) * 1000
 
-# Assign the number of GPUs to use:
-# gpu_count = 1
-print(gpuInfo.get_gpu_topology())
+# Retrieve GPU topology info:
+gpu_count, nodeList, nodeSize, gpu_types, gpu_topology = gpuInfo.get_gpu_info()
+print("\nAllocated {} GPUs from the following node(s):\n{}\n".format(gpu_count, *nodelist))
+print(gpu_types)
+print(gpu_topology)
+print(len(nodelist))
 exit()
-
-gpu_count = getGPUCount()  # Full utilization of GPUs
 popsize = min(totalpopsize // gpu_count, int(50e3))
+print(
+    "Population size assigned to be {}*n with {} per GPU. Total of {}.  \n".format(
+        n, popsize, totalpopsize
+    )
+)
 
 """Basic arguments to be passed to the kernel:
 vrp_capacity, data, known optimal cost, filename, gpu_count, population size, crossover_prob,
@@ -51,12 +52,6 @@ basic_arguments.append(int(sys.argv[6]))  # mutation_prob
 basic_arguments.append(popsize)  # popsize
 basic_arguments.append(1)  # crossover_points
 
-print("\nFound {} GPUs to Utilize.\n".format(gpu_count))
-print(
-    "Population size assigned to be {}*n with {} per GPU. Total of {}.  \n".format(
-        n, popsize, totalpopsize
-    )
-)
 
 # GPU grid configurations:
 grid = gpuGrid.GRID()
