@@ -17,7 +17,6 @@ def readInput():
     # Create VRP object:
     vrpManager = vrp()
     # First reading the VRP from the input #
-    print("Reading data file...", end=" ")
     fo = open(sys.argv[1], "r")
     lines = fo.readlines()
     for i, line in enumerate(lines):
@@ -36,7 +35,7 @@ def readInput():
                     break
             else:
                 vrpManager.opt = np.int32(sys.argv[3])
-                print("\nManual optimal value entered: %d" % vrpManager.opt)
+                # print("\nManual optimal value entered: %d" % vrpManager.opt)
                 break
 
         # Validating positive non-zero capacity
@@ -108,7 +107,7 @@ def readInput():
                                 break
                         if line.upper().startswith("DEPOT_SECTION"):
                             vrpManager.nodes = np.delete(vrpManager.nodes, 0, 0)
-                            print("Done.")
+                            # print("Done.")
                             return [
                                 vrpManager.capacity,
                                 vrpManager.nodes,

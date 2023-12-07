@@ -87,26 +87,39 @@ def get_gpu_info():
     gpu_count, gpu_topology = get_gpu_topology()
 
     # node info:
+    global comm
     comm = MPI.COMM_WORLD
-    rank = comm.Get_rank()
-    nodeSize = comm.Get_size()
-    data_sent = []
-    data_rec = {}
-    if rank != 0:
-        print('preparing data')
-        data_sent = [gpu_count, gpu_types, gpu_topology]
-        comm.send(data_sent, dest=0, tag=11)
-        print('data sent')
-    else:
-        if nodeSize > 1:        
-            for i in range(nodeSize):
-                data_rec[i] = comm.recv(source=i, tag=11)
-            
-            print(data_rec)
-            exit()
-            
-        nodeList = os.environ.get('SLURM_JOB_NODELIST')
 
-        return(gpu_count, nodeList, nodeSize, gpu_types, gpu_topology)
-    # # else:
-    # #     return None
+    nodeList = os.environ.get('SLURM_JOB_NODELIST')
+    nodeSize = comm.Get_size()
+    
+    return(gpu_count, nodeList, nodeSize, gpu_types, gpu_topology)
+
+def transfer_gpu_info(rank, gpu_count, gpu_types, gpu_topology, nodeSize, nodeList):
+    if rank != 0:
+        comm.send([gpu_count, gpu_types, gpu_topology, nodeSize], dest=0, tag=11)
+        return 
+    else:
+        all_allocated_gpu_count = gpu_count
+        all_gpu_types = [gpu_types]
+        all_gpu_topology = [gpu_topology]
+        for i in range(1, nodeSize):
+            ranked_gpu_count, node_gpu_types, node_gpu_topology, _ = comm.recv(source=i, tag=11)
+            all_gpu_types.append(node_gpu_types)
+            all_gpu_topology.append(node_gpu_topology)
+            all_allocated_gpu_count += ranked_gpu_count
+
+        print(f"\nAllocated {all_allocated_gpu_count} GPUs from the following node(s):\n{nodeList}\n")
+        formatted_output = format_gpu_info(all_gpu_types, all_gpu_topology, nodeSize)
+        print(formatted_output)
+        
+def format_gpu_info(gpu_types, gpu_topology, node_size):
+    formatted_output = ""
+    for i in range(node_size):
+        formatted_output += f"Node {i} GPU Information:\n"
+        for gpu_id, gpu_type in gpu_types[i].items():
+            formatted_output += f"  {gpu_id}: {gpu_type}\n"
+        formatted_output += "  Topology:\n"
+        for src, connections in gpu_topology[i].items():
+            formatted_output += f"    {src}: {', '.join([f'{dest}: {conn}' for dest, conn in connections.items()])}\n"
+    return formatted_output

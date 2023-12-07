@@ -12,14 +12,22 @@ import sys
 import gpuGrid
 import val
 import time
+from mpi4py import MPI
 
 # use maximum length in screen output
 np.set_printoptions(threshold=sys.maxsize)
 
-def communicateInfo():
-    pass
+comm = MPI.COMM_WORLD
+rank = comm.Get_rank()
 
+# Retrieve GPU topology info:
+gpu_count, nodeList, nodeSize, gpu_types, gpu_topology = gpuInfo.get_gpu_info()
+gpuInfo.transfer_gpu_info(rank, gpu_count, gpu_types, gpu_topology, nodeSize, nodeList)
+# gpuInfo.print_allocation_info(all_allocated_gpu_count, nodeList, all_gpu_types, all_gpu_topology, nodeSize)
 # read problem file and save vrp_capacity, data, opt into basic_arguments list
+if rank == 0: 
+    print("Reading data file...", end=" ")
+
 basic_arguments = readInput.readInput()
 basic_arguments.append(sys.argv[1])  # filename
 
@@ -28,13 +36,8 @@ n = int(sys.argv[4])
 node_count = basic_arguments[1].shape[0]
 totalpopsize = -(-(n * (node_count - 1)) // 1000) * 1000
 
-# Retrieve GPU topology info:
-gpu_count, nodeList, nodeSize, gpu_types, gpu_topology = gpuInfo.get_gpu_info()
-print("\nAllocated {} GPUs from the following node(s):\n{}\n".format(gpu_count, *nodelist))
-print(gpu_types)
-print(gpu_topology)
-print(len(nodelist))
 exit()
+
 popsize = min(totalpopsize // gpu_count, int(50e3))
 print(
     "Population size assigned to be {}*n with {} per GPU. Total of {}.  \n".format(
